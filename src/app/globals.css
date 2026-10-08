@@ -1,33 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card-bg: #ffffff;
-  --card-border: #e2e8f0;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --success: #059669;
-  --warning: #d97706;
-  --brand-navy: #0f172a;
-  --brand-sidebar: #0a1128;
+  --canvas-bg: #ecebe6;
+  --main-card-bg: #fafaf8;
+  --sidebar-dark: #232528;
+  --sidebar-active: #f5ba41;
+  
+  --card-sage: #d2dec9;
+  --card-sage-text: #2f4528;
+  --card-gold: #fbe29d;
+  --card-gold-text: #59420b;
+  --card-purple: #9a9ef8;
+  --card-purple-hover: #8b8ff5;
+  
+  --cream-card: #f6f5f0;
+  --cream-track: #efefe9;
+  --charcoal-bar: #232528;
+  
+  --text-dark: #232528;
+  --text-muted: #88898b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --color-canvas: var(--canvas-bg);
+  --color-main: var(--main-card-bg);
+  --color-sidebar: var(--sidebar-dark);
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 body {
-  background-color: #f1f5f9;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.04) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.03) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(241, 245, 249, 1) 0px, transparent 100%);
-  background-attachment: fixed;
-  color: #0f172a;
+  background-color: var(--canvas-bg);
+  color: var(--text-dark);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -35,60 +39,80 @@ body {
 
 /* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d5d4ce;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #bab9b3;
 }
 
-/* Luxury Card & Glassmorphic Utilities */
-.luxe-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+/* Master Super Card Wrapper */
+.master-super-card {
+  background-color: #fafaf8;
+  border: 1px solid #e5e3dc;
+  border-radius: 36px;
+  box-shadow: 0 25px 60px -15px rgba(35, 37, 40, 0.08), 0 10px 20px -5px rgba(35, 37, 40, 0.03);
 }
 
-.luxe-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+/* Bespoke Metric Cards */
+.metric-card-sage {
+  background-color: #d2dec9;
+  color: #2b3e24;
+  border-radius: 28px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+.metric-card-sage:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px -8px rgba(90, 115, 78, 0.25);
 }
 
-.luxe-card-dark {
-  background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+.metric-card-gold {
+  background-color: #fbe29d;
+  color: #4d3809;
+  border-radius: 28px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+.metric-card-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px -8px rgba(185, 140, 30, 0.25);
 }
 
-/* Glassmorphic Container Utility */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+.metric-card-purple {
+  background-color: #9a9ef8;
+  color: #ffffff;
+  border-radius: 28px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+.metric-card-purple:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px -8px rgba(100, 105, 225, 0.35);
 }
 
-.glass-nav-dark {
-  background: rgba(10, 17, 40, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+/* Cream Section / Feed Card */
+.feed-item-card {
+  background-color: #f6f5f0;
+  border-radius: 20px;
+  transition: all 0.15s ease;
+}
+.feed-item-card:hover {
+  background-color: #f0eee7;
+  transform: translateX(2px);
 }
 
 /* Button Micro-interactions */
-.btn-tactile {
+.btn-pill {
+  border-radius: 9999px;
   transition: all 0.15s ease-in-out;
 }
-.btn-tactile:active {
-  transform: scale(0.97);
+.btn-pill:active {
+  transform: scale(0.96);
 }
 
 /* Mobile Safe Areas */

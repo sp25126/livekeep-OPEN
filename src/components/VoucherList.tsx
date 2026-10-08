@@ -18,8 +18,7 @@ import {
   ShieldCheck,
   RefreshCw,
   Share2,
-  ChevronRight,
-  Sparkles
+  ChevronRight
 } from 'lucide-react';
 
 interface VoucherListProps {
@@ -60,21 +59,21 @@ export default function VoucherList({
       case 'approved':
       case 'paid':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Approved
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#D2DEC9] text-[#2b3e24]">
+            <CheckCircle2 className="h-3.5 w-3.5 text-[#2b3e24]" /> Approved
           </span>
         );
       case 'rejected':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#F8D7DA] text-[#721C24]">
             Rejected
           </span>
         );
       case 'pending':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock className="h-3.5 w-3.5 text-amber-600 animate-spin" style={{ animationDuration: '4s' }} /> Pending Approval
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#FBE29D] text-[#4d3809]">
+            <Clock className="h-3.5 w-3.5 text-[#4d3809] animate-spin" style={{ animationDuration: '4s' }} /> Pending Review
           </span>
         );
     }
@@ -90,25 +89,25 @@ export default function VoucherList({
   return (
     <div className="space-y-4">
       {/* Search and Filters Bar */}
-      <div className="p-4 rounded-2xl luxe-card flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+      <div className="p-4 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         {/* Search Input */}
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#88898b]" />
           <input
             type="text"
             placeholder="Search party name, GSTIN, or invoice number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+            className="w-full pl-11 pr-4 py-2.5 bg-[#f6f5f0] border-none rounded-full text-xs sm:text-sm font-medium text-[#232528] placeholder-[#88898b] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
           />
         </div>
 
-        {/* Filter Pills */}
+        {/* Filter Selects */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="min-h-[40px] px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
+            className="min-h-[40px] px-4 py-2 bg-[#f6f5f0] border-none rounded-full text-xs font-bold text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
           >
             <option value="all">All Statuses</option>
             <option value="pending">Pending Review</option>
@@ -118,12 +117,12 @@ export default function VoucherList({
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="min-h-[40px] px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
+            className="min-h-[40px] px-4 py-2 bg-[#f6f5f0] border-none rounded-full text-xs font-bold text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
           >
-            <option value="all">All Voucher Types</option>
+            <option value="all">All Types</option>
             <option value="sales_bill">Sales Bills</option>
             <option value="quotation">Quotations</option>
-            <option value="receipt">Payment Receipts</option>
+            <option value="receipt">Receipts</option>
           </select>
         </div>
       </div>
@@ -134,39 +133,39 @@ export default function VoucherList({
           <div
             key={voucher.id}
             onClick={() => onSelectVoucher(voucher)}
-            className="p-4 rounded-2xl luxe-card cursor-pointer space-y-3 relative active:scale-[0.99] transition"
+            className="p-4 rounded-[24px] bg-[#fafaf8] border border-[#e5e3dc] cursor-pointer space-y-3 relative active:scale-[0.99] transition"
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                <span className="text-[11px] font-bold text-[#232528] bg-[#f6f5f0] px-2.5 py-1 rounded-full">
                   {voucher.voucher_number}
                 </span>
-                <h4 className="font-extrabold text-sm text-slate-900 mt-1.5 line-clamp-1">{voucher.party_name}</h4>
-                <div className="text-[11px] text-slate-500 font-mono mt-0.5">GST: {voucher.party_gstin || 'Unregistered'}</div>
+                <h4 className="font-extrabold text-sm text-[#232528] mt-2 line-clamp-1">{voucher.party_name}</h4>
+                <div className="text-[11px] text-[#88898b] font-mono mt-0.5">GST: {voucher.party_gstin || 'Unregistered'}</div>
               </div>
               <div className="text-right">
-                <div className="text-base font-extrabold text-slate-900">
+                <div className="text-base font-black text-[#232528] font-mono">
                   ₹{voucher.total_amount.toLocaleString('en-IN')}
                 </div>
-                <div className="text-[10px] text-slate-400">Incl. ₹{voucher.tax_amount?.toLocaleString('en-IN') || 0} GST</div>
+                <div className="text-[10px] text-[#88898b]">Tax: ₹{voucher.tax_amount?.toLocaleString('en-IN') || 0}</div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+            <div className="pt-2 border-t border-[#efeee9] flex items-center justify-between text-xs">
               <div>{getStatusBadge(voucher.status)}</div>
 
               <div className="flex items-center space-x-1.5" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={(e) => handleWhatsAppShare(e, voucher)}
-                  className="min-h-[36px] px-2.5 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold flex items-center gap-1 btn-tactile"
+                  className="min-h-[36px] px-3 py-1.5 bg-[#D2DEC9] text-[#2b3e24] font-bold rounded-full text-xs flex items-center gap-1 btn-pill"
                 >
-                  <Share2 className="h-3.5 w-3.5 text-emerald-600" /> WhatsApp
+                  <Share2 className="h-3.5 w-3.5" /> WhatsApp
                 </button>
 
                 {(activeRole === 'checker' || activeRole === 'admin') && voucher.status === 'pending' && (
                   <button
                     onClick={() => onUpdateStatus(voucher.id, 'approved')}
-                    className="min-h-[36px] px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs shadow-md shadow-blue-600/20 btn-tactile"
+                    className="min-h-[36px] px-4 py-1.5 bg-[#f5ba41] hover:bg-[#e6ab33] text-[#232528] font-bold rounded-full text-xs btn-pill"
                   >
                     Approve
                   </button>
@@ -177,85 +176,79 @@ export default function VoucherList({
         ))}
       </div>
 
-      {/* ================= DESKTOP VIEW: MULTI-COLUMN TABULAR GRID (>= 768px) ================= */}
-      <div className="hidden md:block rounded-2xl luxe-card overflow-hidden">
+      {/* ================= DESKTOP VIEW: TABULAR LIST (>= 768px) ================= */}
+      <div className="hidden md:block rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-600">
-                <th className="py-3.5 px-4">Voucher No</th>
-                <th className="py-3.5 px-4">Party / Customer</th>
-                <th className="py-3.5 px-4">Type</th>
-                <th className="py-3.5 px-4 text-right">Tax (GST)</th>
-                <th className="py-3.5 px-4 text-right">Total Amount</th>
-                <th className="py-3.5 px-4 text-center">Status</th>
-                <th className="py-3.5 px-4 text-center">E-Invoice IRN</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+              <tr className="border-b border-[#e5e3dc] bg-[#f6f5f0] text-[11px] font-extrabold uppercase tracking-wider text-[#88898b]">
+                <th className="py-4 px-6">Voucher No</th>
+                <th className="py-4 px-6">Party / Customer</th>
+                <th className="py-4 px-6">Type</th>
+                <th className="py-4 px-6 text-right">Tax (GST)</th>
+                <th className="py-4 px-6 text-right">Total Amount</th>
+                <th className="py-4 px-6 text-center">Status</th>
+                <th className="py-4 px-6 text-center">E-Invoice IRN</th>
+                <th className="py-4 px-6 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
+            <tbody className="divide-y divide-[#efeee9] text-xs">
               {filteredVouchers.map((voucher) => (
                 <tr
                   key={voucher.id}
                   onClick={() => onSelectVoucher(voucher)}
-                  className="hover:bg-blue-50/40 cursor-pointer transition"
+                  className="hover:bg-[#f6f5f0]/80 cursor-pointer transition"
                 >
-                  <td className="py-3.5 px-4 font-mono font-bold text-blue-600 whitespace-nowrap">
+                  <td className="py-4 px-6 font-mono font-bold text-[#232528] whitespace-nowrap">
                     {voucher.voucher_number}
                   </td>
-                  <td className="py-3.5 px-4">
-                    <div className="font-bold text-slate-900">{voucher.party_name}</div>
-                    <div className="text-[11px] text-slate-400 font-mono">{voucher.party_gstin || 'Unregistered'}</div>
+                  <td className="py-4 px-6">
+                    <div className="font-extrabold text-sm text-[#232528]">{voucher.party_name}</div>
+                    <div className="text-[11px] text-[#88898b] font-mono">{voucher.party_gstin || 'Unregistered'}</div>
                   </td>
-                  <td className="py-3.5 px-4 capitalize font-medium text-slate-600">
-                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px]">
+                  <td className="py-4 px-6 capitalize font-medium text-[#88898b]">
+                    <span className="px-2.5 py-1 rounded-full bg-[#f6f5f0] text-[#232528] text-[11px] font-bold">
                       {voucher.voucher_type.replace('_', ' ')}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-slate-500">
+                  <td className="py-4 px-6 text-right font-mono text-[#88898b]">
                     ₹{voucher.tax_amount?.toLocaleString('en-IN') || 0}
                   </td>
-                  <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono text-sm">
+                  <td className="py-4 px-6 text-right font-black text-[#232528] font-mono text-sm">
                     ₹{voucher.total_amount.toLocaleString('en-IN')}
                   </td>
-                  <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                  <td className="py-4 px-6 text-center whitespace-nowrap">
                     {getStatusBadge(voucher.status)}
                   </td>
-                  <td className="py-3.5 px-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="py-4 px-6 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     {voucher.irn_number ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                        <ShieldCheck className="h-3 w-3 text-purple-600" /> IRN Generated
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-[#8F94FB]/20 text-[#4c50b8]">
+                        <ShieldCheck className="h-3.5 w-3.5 text-[#5b5fd8]" /> IRN Active
                       </span>
                     ) : (
                       <button
                         onClick={() => onGenerateIrn(voucher.id)}
                         disabled={generatingIrnId === voucher.id}
-                        className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition btn-tactile disabled:opacity-50"
+                        className="px-3 py-1 text-[11px] font-bold text-white bg-[#8F94FB] hover:bg-[#7d82f2] rounded-full transition btn-pill disabled:opacity-50"
                       >
-                        {generatingIrnId === voucher.id ? (
-                          <span className="flex items-center gap-1">
-                            <RefreshCw className="h-3 w-3 animate-spin" /> Generating...
-                          </span>
-                        ) : (
-                          '1-Click IRN'
-                        )}
+                        {generatingIrnId === voucher.id ? 'Generating...' : '1-Click IRN'}
                       </button>
                     )}
                   </td>
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <td className="py-4 px-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end space-x-1.5">
                       <button
                         onClick={(e) => handleWhatsAppShare(e, voucher)}
-                        title="Send Bill via WhatsApp"
-                        className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition btn-tactile"
+                        title="Send on WhatsApp"
+                        className="p-2 bg-[#D2DEC9] hover:bg-[#c2d2b7] text-[#2b3e24] rounded-full transition btn-pill"
                       >
-                        <Share2 className="h-4 w-4 text-emerald-600" />
+                        <Share2 className="h-3.5 w-3.5" />
                       </button>
 
                       {(activeRole === 'checker' || activeRole === 'admin') && voucher.status === 'pending' && (
                         <button
                           onClick={() => onUpdateStatus(voucher.id, 'approved')}
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs shadow-sm shadow-blue-600/30 btn-tactile"
+                          className="px-4 py-1.5 bg-[#f5ba41] hover:bg-[#e6ab33] text-[#232528] font-bold rounded-full text-xs btn-pill"
                         >
                           Approve
                         </button>

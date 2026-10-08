@@ -19,9 +19,7 @@ import {
   ArrowLeft,
   RefreshCw,
   Mail,
-  UserCheck,
-  Receipt,
-  Building2
+  Box
 } from 'lucide-react';
 
 export default function UserManagementPage() {
@@ -186,30 +184,30 @@ export default function UserManagementPage() {
   const makerCount = users.filter(u => u.role === 'maker').length;
 
   return (
-    <div className="flex min-h-screen bg-slate-100 text-slate-900 font-sans">
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <header className="border-b border-slate-200 bg-white sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-sm">
+    <div className="min-h-screen bg-[#ecebe6] p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center font-sans">
+      {/* Master Container */}
+      <div className="master-super-card w-full max-w-[1480px] min-h-[900px] flex flex-col p-6 sm:p-8 space-y-6">
+        {/* Header */}
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e5e3dc] pb-5">
           <div className="flex items-center space-x-3">
             <Link
               href="/"
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition btn-tactile"
-              title="Return to Main Dashboard"
+              className="p-2.5 rounded-full bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] transition btn-pill"
+              title="Return to Dashboard"
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
             <div>
-              <h1 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" /> Staff & Access Permissions
+              <h1 className="text-2xl font-black text-[#232528] tracking-tight flex items-center gap-2">
+                <Users className="h-6 w-6 text-[#f5ba41]" /> Staff & Roles Management
               </h1>
-              <p className="text-xs text-slate-500">Manage user roles, Maker-Checker authorization & security credentials</p>
+              <p className="text-xs text-[#88898b]">Manage user roles, Maker-Checker authorization & access controls</p>
             </div>
           </div>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition btn-tactile"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#f5ba41] hover:bg-[#e6ab33] text-[#232528] text-xs font-black shadow-md shadow-[#f5ba41]/30 transition btn-pill"
           >
             <UserPlus className="h-4 w-4" /> Add Team Member
           </button>
@@ -217,209 +215,207 @@ export default function UserManagementPage() {
 
         {/* Feedback Alert */}
         {feedbackMsg && (
-          <div className={`mx-6 mt-4 p-4 rounded-2xl text-xs font-bold flex items-center gap-2 shadow-sm ${
+          <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-2 ${
             feedbackMsg.type === 'success' 
-              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
-              : 'bg-rose-50 text-rose-800 border border-rose-200'
+              ? 'bg-[#D2DEC9] text-[#2b3e24]' 
+              : 'bg-[#F8D7DA] text-[#721C24]'
           }`}>
-            {feedbackMsg.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-rose-600" />}
+            {feedbackMsg.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-[#2b3e24]" /> : <AlertCircle className="h-4 w-4 text-[#721C24]" />}
             <span>{feedbackMsg.text}</span>
           </div>
         )}
 
-        <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
-          {/* Key Metric Overview Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            <div className="p-4 sm:p-5 rounded-2xl luxe-card bg-gradient-to-br from-white to-slate-50">
-              <div className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">Total Staff</div>
-              <div className="text-2xl font-extrabold text-slate-900 mt-1 font-mono">{users.length}</div>
-              <div className="text-[11px] text-slate-500 mt-1 font-medium">Active Team Accounts</div>
+        {/* Key Metric Overview Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="p-5 rounded-[24px] bg-[#f6f5f0] space-y-1">
+            <div className="text-[11px] font-black text-[#88898b] uppercase tracking-wider">Total Staff</div>
+            <div className="text-2xl font-black text-[#232528] font-mono">{users.length}</div>
+            <div className="text-[11px] text-[#88898b]">Active Accounts</div>
+          </div>
+
+          <div className="p-5 rounded-[24px] bg-[#8F94FB]/20 space-y-1">
+            <div className="text-[11px] font-black text-[#2c307a] uppercase tracking-wider">Administrators</div>
+            <div className="text-2xl font-black text-[#2c307a] font-mono">{adminCount}</div>
+            <div className="text-[11px] text-[#5b5fd8]">Full Governance</div>
+          </div>
+
+          <div className="p-5 rounded-[24px] bg-[#FBE29D] space-y-1">
+            <div className="text-[11px] font-black text-[#4d3809] uppercase tracking-wider">Accountant Checkers</div>
+            <div className="text-2xl font-black text-[#4d3809] font-mono">{checkerCount}</div>
+            <div className="text-[11px] text-[#4d3809]">Audit Authority</div>
+          </div>
+
+          <div className="p-5 rounded-[24px] bg-[#D2DEC9] space-y-1">
+            <div className="text-[11px] font-black text-[#2b3e24] uppercase tracking-wider">Sales Makers</div>
+            <div className="text-2xl font-black text-[#2b3e24] font-mono">{makerCount}</div>
+            <div className="text-[11px] text-[#2b3e24]">Field Invoicing</div>
+          </div>
+        </div>
+
+        {/* User Table Card */}
+        <div className="rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] overflow-hidden flex-1 flex flex-col">
+          {/* Table Filters & Search */}
+          <div className="p-4 border-b border-[#e5e3dc] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#f6f5f0]">
+            <div className="relative flex-1 max-w-md">
+              <Search className="h-4 w-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#88898b]" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search staff by name or email..."
+                className="w-full bg-white border-none rounded-full pl-11 pr-4 py-2.5 text-xs sm:text-sm text-[#232528] placeholder-[#88898b] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+              />
             </div>
 
-            <div className="p-4 sm:p-5 rounded-2xl luxe-card bg-gradient-to-br from-white to-purple-50">
-              <div className="text-[11px] font-extrabold text-purple-700 uppercase tracking-wider">Administrators</div>
-              <div className="text-2xl font-extrabold text-purple-900 mt-1 font-mono">{adminCount}</div>
-              <div className="text-[11px] text-purple-700 mt-1 font-medium">Full Governance & Security</div>
-            </div>
-
-            <div className="p-4 sm:p-5 rounded-2xl luxe-card bg-gradient-to-br from-white to-blue-50">
-              <div className="text-[11px] font-extrabold text-blue-700 uppercase tracking-wider">Accountant Checkers</div>
-              <div className="text-2xl font-extrabold text-blue-900 mt-1 font-mono">{checkerCount}</div>
-              <div className="text-[11px] text-blue-700 mt-1 font-medium">Audit & Approval Authority</div>
-            </div>
-
-            <div className="p-4 sm:p-5 rounded-2xl luxe-card bg-gradient-to-br from-white to-emerald-50">
-              <div className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Sales Makers</div>
-              <div className="text-2xl font-extrabold text-emerald-900 mt-1 font-mono">{makerCount}</div>
-              <div className="text-[11px] text-emerald-700 mt-1 font-medium">Field Invoicing & Bill Entry</div>
+            {/* Role Filter Pills */}
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-full text-xs overflow-x-auto">
+              {['all', 'admin', 'manager', 'checker', 'maker'].map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRoleFilter(r)}
+                  className={`px-3 py-1 rounded-full capitalize font-bold transition btn-pill ${
+                    roleFilter === r ? 'bg-[#232528] text-white shadow-sm' : 'text-[#88898b] hover:text-[#232528]'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* User Table Card */}
-          <div className="rounded-2xl luxe-card overflow-hidden">
-            {/* Table Filters & Search */}
-            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
-              <div className="relative flex-1 max-w-md">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search staff by name or email..."
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
-                />
-              </div>
+          {/* Table Body */}
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left text-xs text-[#232528]">
+              <thead className="bg-[#f6f5f0] text-[11px] text-[#88898b] font-black uppercase tracking-wider border-b border-[#e5e3dc]">
+                <tr>
+                  <th className="py-4 px-6">User / Staff Details</th>
+                  <th className="py-4 px-6">Assigned Role</th>
+                  <th className="py-4 px-6">Account Status</th>
+                  <th className="py-4 px-6">Created Date</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#efeee9]">
+                {filteredUsers.map((u) => (
+                  <tr key={u.id} className="hover:bg-[#f6f5f0]/80 transition">
+                    <td className="py-4 px-6">
+                      <div className="font-extrabold text-sm text-[#232528]">{u.full_name}</div>
+                      <div className="text-[#88898b] flex items-center gap-1 font-mono text-[11px] mt-0.5">
+                        <Mail className="h-3 w-3 text-[#88898b]" /> {u.email}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase ${
+                        u.role === 'admin'
+                          ? 'bg-[#8F94FB]/20 text-[#2c307a]'
+                          : u.role === 'checker'
+                          ? 'bg-[#FBE29D] text-[#4d3809]'
+                          : u.role === 'manager'
+                          ? 'bg-[#f6f5f0] text-[#232528]'
+                          : 'bg-[#D2DEC9] text-[#2b3e24]'
+                      }`}>
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-bold bg-[#D2DEC9] text-[#2b3e24]">
+                        <CheckCircle2 className="h-3 w-3" /> Active
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 font-mono text-[#88898b]">
+                      {new Date(u.created_at).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedUser(u);
+                            setEditRole(u.role);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="px-3.5 py-1.5 text-xs font-bold text-[#232528] bg-white hover:bg-[#f6f5f0] rounded-full border border-[#e5e3dc] transition flex items-center gap-1 btn-pill"
+                        >
+                          <Edit3 className="h-3.5 w-3.5 text-[#5b5fd8]" /> Edit
+                        </button>
 
-              {/* Role Filter Pills */}
-              <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 text-xs overflow-x-auto">
-                {['all', 'admin', 'manager', 'checker', 'maker'].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRoleFilter(r)}
-                    className={`px-3 py-1.5 rounded-lg capitalize font-bold transition btn-tactile ${
-                      roleFilter === r ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Table Body */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 text-[11px] text-slate-600 font-extrabold uppercase tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-3.5 px-6">User / Staff Details</th>
-                    <th className="py-3.5 px-6">Assigned Role</th>
-                    <th className="py-3.5 px-6">Account Status</th>
-                    <th className="py-3.5 px-6">Created Date</th>
-                    <th className="py-3.5 px-6 text-right">Actions</th>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(u);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="px-3.5 py-1.5 text-xs font-bold text-rose-700 bg-[#F8D7DA] hover:bg-[#f5c6cb] rounded-full transition flex items-center gap-1 btn-pill"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Revoke
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-blue-50/40 transition">
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-sm text-slate-900">{u.full_name}</div>
-                        <div className="text-slate-500 flex items-center gap-1 font-mono text-[11px] mt-0.5">
-                          <Mail className="h-3 w-3 text-slate-400" /> {u.email}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase ${
-                          u.role === 'admin'
-                            ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                            : u.role === 'checker'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : u.role === 'manager'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        }`}>
-                          <ShieldCheck className="h-3.5 w-3.5" />
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Active
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 font-mono text-slate-500">
-                        {new Date(u.created_at).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedUser(u);
-                              setEditRole(u.role);
-                              setIsEditModalOpen(true);
-                            }}
-                            className="px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 transition flex items-center gap-1 btn-tactile shadow-sm"
-                          >
-                            <Edit3 className="h-3.5 w-3.5 text-blue-600" /> Edit
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setSelectedUser(u);
-                              setIsDeleteModalOpen(true);
-                            }}
-                            className="px-3 py-1.5 text-xs font-bold text-rose-700 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition flex items-center gap-1 btn-tactile shadow-sm"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-rose-600" /> Revoke
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </main>
+        </div>
       </div>
 
       {/* CREATE USER MODAL */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-blue-600" /> Provision New Staff Member
+        <div className="fixed inset-0 z-50 bg-[#232528]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[32px] max-w-md w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#e5e3dc] pb-3">
+              <h3 className="text-lg font-black text-[#232528] flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-[#f5ba41]" /> Provision New Staff Account
               </h3>
-              <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-[#88898b] hover:text-[#232528]">✕</button>
             </div>
 
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. Ramesh Chandra"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Corporate Email Address</label>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Corporate Email Address</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="user@enterprise.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Temporary Password</label>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Temporary Password</label>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Assigned System Role</label>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Assigned System Role</label>
                 <select
                   value={userRole}
                   onChange={(e) => setUserRole(e.target.value as UserRole)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 >
                   <option value="maker">Sales Maker (Create & Draft Invoices)</option>
                   <option value="checker">Accountant Checker (Review & Approve)</option>
@@ -434,25 +430,25 @@ export default function UserManagementPage() {
                   id="forceReset"
                   checked={forceReset}
                   onChange={(e) => setForceReset(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-0"
+                  className="rounded border-[#e5e3dc] text-[#f5ba41] focus:ring-0"
                 />
-                <label htmlFor="forceReset" className="text-xs text-slate-600 cursor-pointer">
+                <label htmlFor="forceReset" className="text-xs text-[#88898b] cursor-pointer">
                   Force password reset on initial login
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#e5e3dc]">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="min-h-[44px] px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 rounded-xl btn-tactile"
+                  className="min-h-[44px] px-5 py-2 text-xs font-bold text-[#88898b] hover:text-[#232528] bg-[#f6f5f0] rounded-full btn-pill"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="min-h-[44px] px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-600/30 transition disabled:opacity-50 flex items-center gap-1.5 btn-tactile"
+                  className="min-h-[44px] px-6 py-2 text-xs font-bold text-[#232528] bg-[#f5ba41] hover:bg-[#e6ab33] rounded-full shadow-md shadow-[#f5ba41]/30 transition disabled:opacity-50 flex items-center gap-1.5 btn-pill"
                 >
                   {actionLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
                   Provision Account
@@ -465,22 +461,22 @@ export default function UserManagementPage() {
 
       {/* EDIT ROLE & RESET PASSWORD MODAL */}
       {isEditModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-blue-600" /> Edit Permissions: {selectedUser.full_name}
+        <div className="fixed inset-0 z-50 bg-[#232528]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[32px] max-w-md w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#e5e3dc] pb-3">
+              <h3 className="text-lg font-black text-[#232528] flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-[#8F94FB]" /> Edit Permissions: {selectedUser.full_name}
               </h3>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-[#88898b] hover:text-[#232528]">✕</button>
             </div>
 
             <form onSubmit={handleUpdateUser} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Update System Role</label>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Update System Role</label>
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value as UserRole)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 >
                   <option value="maker">Sales Maker</option>
                   <option value="checker">Accountant Checker</option>
@@ -490,28 +486,28 @@ export default function UserManagementPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Reset Password (Optional)</label>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Reset Password (Optional)</label>
                 <input
                   type="password"
                   value={editPassword}
                   onChange={(e) => setEditPassword(e.target.value)}
                   placeholder="Leave blank to keep existing password"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#e5e3dc]">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="min-h-[44px] px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 rounded-xl btn-tactile"
+                  className="min-h-[44px] px-5 py-2 text-xs font-bold text-[#88898b] hover:text-[#232528] bg-[#f6f5f0] rounded-full btn-pill"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="min-h-[44px] px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition disabled:opacity-50 btn-tactile shadow-md shadow-blue-600/30"
+                  className="min-h-[44px] px-6 py-2 text-xs font-bold text-[#232528] bg-[#f5ba41] hover:bg-[#e6ab33] rounded-full transition disabled:opacity-50 btn-pill shadow-md shadow-[#f5ba41]/30"
                 >
                   Save Changes
                 </button>
@@ -523,24 +519,24 @@ export default function UserManagementPage() {
 
       {/* REVOKE / DELETE CONFIRMATION MODAL */}
       {isDeleteModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-rose-600 flex items-center gap-2">
-                <Trash2 className="h-5 w-5 text-rose-600" /> Revoke User Access?
+        <div className="fixed inset-0 z-50 bg-[#232528]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[32px] max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#e5e3dc] pb-3">
+              <h3 className="text-lg font-black text-rose-700 flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-rose-700" /> Revoke User Access?
               </h3>
-              <button onClick={() => setIsDeleteModalOpen(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setIsDeleteModalOpen(false)} className="text-[#88898b] hover:text-[#232528]">✕</button>
             </div>
 
-            <p className="text-xs text-slate-700 leading-relaxed">
-              Are you sure you want to permanently revoke credentials for <strong>{selectedUser.full_name}</strong> ({selectedUser.email})? They will immediately lose access to the Livekeeping Open enterprise portal.
+            <p className="text-xs text-[#232528] leading-relaxed">
+              Are you sure you want to permanently revoke credentials for <strong>{selectedUser.full_name}</strong> ({selectedUser.email})? They will immediately lose access to the Livekeeping Open portal.
             </p>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <div className="flex justify-end gap-3 pt-3 border-t border-[#e5e3dc]">
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="min-h-[44px] px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 rounded-xl btn-tactile"
+                className="min-h-[44px] px-5 py-2 text-xs font-bold text-[#88898b] hover:text-[#232528] bg-[#f6f5f0] rounded-full btn-pill"
               >
                 Cancel
               </button>
@@ -548,7 +544,7 @@ export default function UserManagementPage() {
                 type="button"
                 onClick={handleDeleteUser}
                 disabled={actionLoading}
-                className="min-h-[44px] px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition disabled:opacity-50 btn-tactile shadow-md shadow-rose-600/30"
+                className="min-h-[44px] px-6 py-2 text-xs font-bold text-white bg-rose-700 hover:bg-rose-800 rounded-full transition disabled:opacity-50 btn-pill shadow-md"
               >
                 Confirm Revocation
               </button>

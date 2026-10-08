@@ -48,22 +48,22 @@ export default function VoucherDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-sm flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#232528]/60 backdrop-blur-sm flex justify-end">
       {/* Drawer Container */}
       <div 
-        className="w-full max-w-xl bg-white text-slate-900 h-full overflow-y-auto shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 border-l border-slate-200"
+        className="w-full max-w-xl bg-[#fafaf8] text-[#232528] h-full overflow-y-auto shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 border-l border-[#e5e3dc]"
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 sticky top-0 z-10">
+        <div className="p-6 border-b border-[#e5e3dc] flex items-center justify-between bg-[#fafaf8] sticky top-0 z-10">
           <div>
-            <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 uppercase">
+            <span className="text-[11px] font-bold text-[#232528] bg-[#f6f5f0] px-3 py-1 rounded-full uppercase">
               {voucher.voucher_type.replace('_', ' ')}
             </span>
-            <h3 className="text-lg font-extrabold text-slate-900 mt-1">{voucher.voucher_number}</h3>
+            <h3 className="text-xl font-black text-[#232528] tracking-tight mt-1.5">{voucher.voucher_number}</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition"
+            className="p-2.5 rounded-full text-[#88898b] hover:text-[#232528] hover:bg-[#f6f5f0] transition"
           >
             <X className="h-5 w-5" />
           </button>
@@ -72,84 +72,84 @@ export default function VoucherDrawer({
         {/* Content Body */}
         <div className="p-6 space-y-6 flex-1">
           {/* Status & Compliance Banner */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <div className="p-5 rounded-[24px] bg-[#f6f5f0] border border-[#e5e3dc] flex items-center justify-between">
             <div>
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Approval Status</div>
-              <div className="font-extrabold text-sm capitalize text-slate-900 mt-0.5 flex items-center gap-1.5">
+              <div className="text-[11px] font-bold text-[#88898b] uppercase tracking-wider">Approval Status</div>
+              <div className="font-extrabold text-sm capitalize text-[#232528] mt-0.5 flex items-center gap-1.5">
                 {voucher.status === 'approved' ? (
-                  <><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Approved & Synced</>
+                  <><CheckCircle2 className="h-4 w-4 text-[#2b3e24]" /> Approved & Synced</>
                 ) : (
-                  <><Clock className="h-4 w-4 text-amber-600" /> Pending Maker Review</>
+                  <><Clock className="h-4 w-4 text-[#4d3809]" /> Pending Maker Review</>
                 )}
               </div>
             </div>
 
             <div className="text-right">
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tally Prime Status</div>
-              <div className="text-xs font-bold text-emerald-600 font-mono">XML Bridge Ready</div>
+              <div className="text-[11px] font-bold text-[#88898b] uppercase tracking-wider">Tally Prime Status</div>
+              <div className="text-xs font-black text-[#2b3e24] font-mono">XML Bridge Ready</div>
             </div>
           </div>
 
           {/* Party and Supply Info */}
-          <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+          <div className="grid grid-cols-2 gap-4 p-5 rounded-[24px] bg-[#f6f5f0] border border-[#e5e3dc] text-xs">
             <div>
-              <div className="text-[10px] font-bold uppercase text-slate-400">Billed To (Customer)</div>
-              <div className="font-bold text-slate-900 text-sm mt-1">{voucher.party_name}</div>
-              <div className="text-slate-600 font-mono mt-0.5">GSTIN: {voucher.party_gstin || '24AAACA12341ZV'}</div>
-              <div className="text-slate-500 mt-1">Place of Supply: Gujarat (24)</div>
+              <div className="text-[10px] font-bold uppercase text-[#88898b]">Billed To (Customer)</div>
+              <div className="font-extrabold text-sm text-[#232528] mt-1">{voucher.party_name}</div>
+              <div className="text-[#88898b] font-mono mt-0.5">GSTIN: {voucher.party_gstin || '24AAACA12341ZV'}</div>
+              <div className="text-[#88898b] mt-1">Place of Supply: Gujarat (24)</div>
             </div>
 
             <div>
-              <div className="text-[10px] font-bold uppercase text-slate-400">Billed From (Seller)</div>
-              <div className="font-bold text-slate-900 text-sm mt-1">Livekeeping Enterprises</div>
-              <div className="text-slate-600 font-mono mt-0.5">GSTIN: 24AAACL9999P1Z2</div>
-              <div className="text-slate-500 mt-1">Ahmedabad, Gujarat</div>
+              <div className="text-[10px] font-bold uppercase text-[#88898b]">Billed From (Seller)</div>
+              <div className="font-extrabold text-sm text-[#232528] mt-1">Livekeeping Enterprises</div>
+              <div className="text-[#88898b] font-mono mt-0.5">GSTIN: 24AAACL9999P1Z2</div>
+              <div className="text-[#88898b] mt-1">Ahmedabad, Gujarat</div>
             </div>
           </div>
 
           {/* Line Items Table */}
-          <div className="border border-slate-200 rounded-2xl overflow-hidden">
-            <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 text-[11px] font-extrabold uppercase text-slate-600 flex justify-between">
+          <div className="border border-[#e5e3dc] rounded-[24px] overflow-hidden bg-white">
+            <div className="bg-[#f6f5f0] px-5 py-3 border-b border-[#e5e3dc] text-[11px] font-black uppercase text-[#88898b] flex justify-between">
               <span>Item & Description</span>
               <span>Amount (₹)</span>
             </div>
-            <div className="divide-y divide-slate-100 text-xs p-2">
+            <div className="divide-y divide-[#efeee9] text-xs p-3">
               <div className="p-2 flex justify-between items-center">
                 <div>
-                  <div className="font-bold text-slate-900">Enterprise Industrial Valves (Grade A)</div>
-                  <div className="text-[11px] text-slate-500">HSN: 84818030 | Qty: 10 Nos @ ₹{(voucher.total_amount * 0.85 / 10).toLocaleString('en-IN')}</div>
+                  <div className="font-bold text-[#232528]">Enterprise Industrial Valves (Grade A)</div>
+                  <div className="text-[11px] text-[#88898b]">HSN: 84818030 | Qty: 10 Nos @ ₹{(voucher.total_amount * 0.85 / 10).toLocaleString('en-IN')}</div>
                 </div>
-                <div className="font-bold text-slate-900 font-mono">
+                <div className="font-black text-[#232528] font-mono">
                   ₹{(voucher.total_amount - (voucher.tax_amount || 0)).toLocaleString('en-IN')}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Grand Totals */}
-          <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2 shadow-lg">
-            <div className="flex justify-between text-xs text-slate-400">
-              <span>Taxable Value (Subtotal)</span>
-              <span className="font-mono text-slate-200">₹{(voucher.total_amount - (voucher.tax_amount || 0)).toLocaleString('en-IN')}</span>
+          {/* Grand Totals Card (Matte Charcoal) */}
+          <div className="p-6 rounded-[28px] bg-[#232528] text-white space-y-2 shadow-xl">
+            <div className="flex justify-between text-xs text-[#c9c8c5]">
+              <span>Taxable Subtotal</span>
+              <span className="font-mono text-white">₹{(voucher.total_amount - (voucher.tax_amount || 0)).toLocaleString('en-IN')}</span>
             </div>
-            <div className="flex justify-between text-xs text-slate-400">
-              <span>GST Breakdown (CGST 9% + SGST 9%)</span>
-              <span className="font-mono text-slate-200">₹{(voucher.tax_amount || 0).toLocaleString('en-IN')}</span>
+            <div className="flex justify-between text-xs text-[#c9c8c5]">
+              <span>GST Breakdown (18%)</span>
+              <span className="font-mono text-white">₹{(voucher.tax_amount || 0).toLocaleString('en-IN')}</span>
             </div>
-            <div className="border-t border-slate-800 pt-2 flex justify-between text-base font-extrabold text-white">
+            <div className="border-t border-white/15 pt-3 flex justify-between text-lg font-black text-white">
               <span>Grand Total</span>
-              <span className="text-emerald-400 font-mono">₹{voucher.total_amount.toLocaleString('en-IN')}</span>
+              <span className="text-[#f5ba41] font-mono">₹{voucher.total_amount.toLocaleString('en-IN')}</span>
             </div>
           </div>
 
-          {/* Government NIC E-Invoice & E-Way Section */}
-          <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-3">
+          {/* Government NIC E-Invoice Section */}
+          <div className="p-5 rounded-[24px] bg-[#8F94FB]/15 border border-[#8F94FB]/30 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-indigo-600" />
+                <ShieldCheck className="h-5 w-5 text-[#5b5fd8]" />
                 <div>
-                  <h4 className="font-bold text-xs text-indigo-950">Govt. E-Invoice & E-Way Bill</h4>
-                  <p className="text-[11px] text-indigo-700">AES-256 Direct NIC Compliance</p>
+                  <h4 className="font-black text-xs text-[#2c307a]">Govt. E-Invoice & E-Way Bill</h4>
+                  <p className="text-[11px] text-[#5b5fd8]">AES-256 Direct NIC Gateway</p>
                 </div>
               </div>
 
@@ -157,23 +157,23 @@ export default function VoucherDrawer({
                 <button
                   onClick={() => onGenerateIrn(voucher.id)}
                   disabled={generatingIrnId === voucher.id}
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-600/20 btn-tactile disabled:opacity-50"
+                  className="px-4 py-2 bg-[#8F94FB] hover:bg-[#7d82f2] text-white font-bold rounded-full text-xs transition btn-pill disabled:opacity-50"
                 >
-                  {generatingIrnId === voucher.id ? 'Generating IRN...' : 'Generate 1-Click IRN'}
+                  {generatingIrnId === voucher.id ? 'Generating...' : '1-Click IRN'}
                 </button>
               )}
             </div>
 
             {voucher.irn_number && (
-              <div className="bg-white p-3 rounded-xl border border-indigo-200 space-y-2">
+              <div className="bg-white p-4 rounded-2xl border border-[#8F94FB]/20 space-y-2">
                 <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Verified IRN Hash</div>
-                  <div className="text-[11px] font-mono font-bold text-indigo-900 break-all">{voucher.irn_number}</div>
+                  <div className="text-[10px] font-bold text-[#88898b] uppercase">Verified IRN Hash</div>
+                  <div className="text-[11px] font-mono font-bold text-[#232528] break-all">{voucher.irn_number}</div>
                 </div>
                 {voucher.eway_bill_no && (
                   <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">E-Way Bill No.</div>
-                    <div className="text-xs font-mono font-bold text-emerald-700">{voucher.eway_bill_no}</div>
+                    <div className="text-[10px] font-bold text-[#88898b] uppercase">E-Way Bill No.</div>
+                    <div className="text-xs font-mono font-black text-[#2b3e24]">{voucher.eway_bill_no}</div>
                   </div>
                 )}
               </div>
@@ -182,18 +182,18 @@ export default function VoucherDrawer({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/90 sticky bottom-0 z-10 flex flex-wrap gap-2 justify-end">
+        <div className="p-5 border-t border-[#e5e3dc] bg-[#fafaf8] sticky bottom-0 z-10 flex flex-wrap gap-2 justify-end">
           <button
             onClick={handleDownloadPdf}
-            className="min-h-[44px] px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold border border-slate-200 rounded-xl text-xs flex items-center gap-1.5 btn-tactile shadow-sm"
+            className="min-h-[44px] px-5 py-2 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] font-bold rounded-full text-xs flex items-center gap-1.5 btn-pill"
           >
-            <Printer className="h-4 w-4 text-slate-600" />
+            <Printer className="h-4 w-4" />
             <span>Print PDF</span>
           </button>
 
           <button
             onClick={handleWhatsAppShare}
-            className="min-h-[44px] px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/30 btn-tactile"
+            className="min-h-[44px] px-6 py-2 bg-[#D2DEC9] hover:bg-[#c2d2b7] text-[#2b3e24] font-black rounded-full text-xs flex items-center gap-1.5 btn-pill shadow-sm"
           >
             <Share2 className="h-4 w-4" />
             <span>Send on WhatsApp</span>
@@ -205,7 +205,7 @@ export default function VoucherDrawer({
                 onUpdateStatus(voucher.id, 'approved');
                 onClose();
               }}
-              className="min-h-[44px] px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-600/30 btn-tactile"
+              className="min-h-[44px] px-6 py-2 bg-[#f5ba41] hover:bg-[#e6ab33] text-[#232528] font-black rounded-full text-xs btn-pill shadow-md shadow-[#f5ba41]/20"
             >
               Approve Voucher
             </button>
