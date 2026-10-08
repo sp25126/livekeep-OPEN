@@ -5,21 +5,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserRole } from '@/types/database';
 import { 
-  Box, 
-  LayoutDashboard, 
-  BarChart2, 
-  CreditCard, 
-  ArrowLeftRight, 
-  ShoppingBag, 
-  Users2, 
-  MessageSquare, 
-  Settings, 
-  LogOut,
-  Sparkles,
-  MapPin,
-  Plus,
-  Building2,
-  Receipt
+  Receipt, 
+  BarChart3, 
+  Users, 
+  Plus, 
+  MapPin, 
+  UserCheck, 
+  Building2, 
+  ChevronRight,
+  Box,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -38,103 +34,93 @@ export default function Navigation({
   isConnected,
   onOpenNewVoucher,
   onOpenGpsModal,
-  activeTab = 'dashboard',
+  activeTab = 'vouchers',
   onTabChange
 }: NavigationProps) {
   const pathname = usePathname();
 
   const navItems = [
     {
-      id: 'dashboard',
-      name: 'Dashboard',
-      icon: LayoutDashboard,
-      roles: ['admin', 'manager', 'checker', 'maker']
-    },
-    {
-      id: 'statistics',
-      name: 'Statistics',
-      icon: BarChart2,
-      roles: ['admin', 'manager', 'checker']
-    },
-    {
       id: 'vouchers',
       name: 'Daybook & Invoices',
+      subtitle: 'Sales Bills, WhatsApp & Approvals',
       icon: Receipt,
       roles: ['admin', 'manager', 'checker', 'maker']
     },
     {
-      id: 'transactions',
-      name: 'Transactions',
-      icon: ArrowLeftRight,
-      roles: ['admin', 'manager', 'checker', 'maker']
-    },
-    {
-      id: 'products',
-      name: 'GST Stock',
-      icon: ShoppingBag,
-      roles: ['admin', 'manager', 'checker', 'maker']
-    },
-    {
-      id: 'customer',
-      name: 'Customers',
-      icon: Users2,
+      id: 'reports',
+      name: 'Business Reports',
+      subtitle: 'Receivables Aging, P&L & Balance',
+      icon: BarChart3,
       roles: ['admin', 'manager', 'checker']
     },
     {
-      id: 'messages',
-      name: 'WhatsApp Reminders',
-      icon: MessageSquare,
-      roles: ['admin', 'manager', 'checker', 'maker'],
-      badge: '5'
-    },
-    {
-      id: 'settings',
-      name: 'Staff & Roles',
+      id: 'users',
+      name: 'Staff & Security',
+      subtitle: 'Team Access & Permissions',
       href: '/dashboard/users',
-      icon: Settings,
-      roles: ['admin']
+      icon: Users,
+      roles: ['admin'],
+      badge: 'Admin'
     }
   ];
 
   return (
     <>
-      {/* ================= DESKTOP SIDEBAR (Matte Charcoal) ================= */}
-      <aside className="hidden lg:flex w-64 bg-[#232528] text-[#c9c8c5] flex-col justify-between shrink-0 rounded-l-[36px] p-6 select-none">
-        <div className="space-y-6">
-          {/* Brand Logo */}
-          <div className="flex items-center space-x-3 px-2">
-            <div className="h-9 w-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white shadow-inner">
-              <Box className="h-5 w-5 text-white" />
+      {/* ================= DESKTOP SIDEBAR (Matte Charcoal & Warm Sand Accent) ================= */}
+      <aside className="hidden md:flex w-72 bg-[#232528] text-[#c9c8c5] flex-col justify-between shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto p-5 select-none border-r border-[#1a1c1e]">
+        <div className="space-y-5">
+          {/* Brand Header */}
+          <div className="flex items-center space-x-3 pb-2">
+            <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-[#f5ba41] shadow-inner">
+              <Box className="h-5 w-5" />
             </div>
-            <span className="text-xl font-extrabold tracking-tight text-white">Livekeep</span>
+            <div>
+              <div className="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
+                Livekeep <span className="text-[#f5ba41] font-black text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-[#f5ba41]/30">ERP</span>
+              </div>
+              <div className="text-[11px] text-[#8c8d8f]">Smart GST & Tally Bridge</div>
+            </div>
           </div>
 
-          {/* User Profile Card */}
-          <div className="flex flex-col items-center text-center pt-2 pb-2">
-            <div className="relative mb-3">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-slate-700 to-slate-500 ring-4 ring-white/10 p-0.5 overflow-hidden flex items-center justify-center shadow-lg">
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-                  alt="User Profile"
-                  className="h-full w-full object-cover rounded-full grayscale contrast-125"
-                />
+          {/* Active Company Badge */}
+          <div className="p-3 rounded-2xl bg-[#1b1c1e] border border-white/5 flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-2.5 truncate">
+              <div className="p-1.5 rounded-xl bg-white/5 text-[#c9c8c5]">
+                <Building2 className="h-4 w-4" />
               </div>
-              <span className={`absolute bottom-0 right-1 h-3.5 w-3.5 rounded-full ring-2 ring-[#232528] ${isConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              <div className="truncate">
+                <div className="font-bold text-white text-[11px] truncate">Livekeeping Enterprises</div>
+                <div className="text-[10px] text-[#8c8d8f] font-mono">24AAACL9999P1Z2</div>
+              </div>
             </div>
-            <div className="text-[11px] text-[#8c8d8f] font-medium">Welcome Back,</div>
-            <div className="text-base font-bold text-white tracking-tight mt-0.5">Saumya Patel</div>
-            
-            {/* Quick Role Simulation Badge */}
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-emerald-400 ring-2 ring-emerald-400/20 animate-pulse' : 'bg-amber-400'}`}
+              title={isConnected ? 'Real-Time Sync Active' : 'Offline Mode'}
+            />
+          </div>
+
+          {/* Role Simulation Switcher Card */}
+          <div className="p-3.5 rounded-2xl bg-[#1b1c1e] border border-white/5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-bold text-[#8c8d8f] uppercase tracking-wider flex items-center gap-1">
+                <UserCheck className="h-3 w-3 text-[#f5ba41]" /> Role Preview
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#f5ba41] text-[#232528]">
+                {currentRole}
+              </span>
+            </div>
+
             {onRoleChange && (
-              <div className="mt-2.5 flex items-center gap-1 bg-[#1a1c1e] p-1 rounded-xl border border-white/5">
-                {(['maker', 'checker', 'admin'] as UserRole[]).map((r) => (
+              <div className="grid grid-cols-4 gap-1 p-1 bg-[#232528] rounded-xl border border-white/5">
+                {(['maker', 'checker', 'manager', 'admin'] as UserRole[]).map((r) => (
                   <button
                     key={r}
                     onClick={() => onRoleChange(r)}
-                    className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-lg transition ${
+                    className={`py-1 rounded-lg text-[10px] font-bold capitalize transition ${
                       currentRole === r
-                        ? 'bg-[#f5ba41] text-[#232528] shadow-sm'
-                        : 'text-[#88898b] hover:text-white'
+                        ? 'bg-[#f5ba41] text-[#232528] shadow-sm font-black'
+                        : 'text-[#8c8d8f] hover:text-white'
                     }`}
                   >
                     {r}
@@ -144,11 +130,23 @@ export default function Navigation({
             )}
           </div>
 
+          {/* Quick Create Voucher Button */}
+          <div>
+            <button
+              onClick={onOpenNewVoucher}
+              className="w-full min-h-[44px] py-2.5 px-4 bg-[#f5ba41] hover:bg-[#e6ab33] text-[#232528] font-black rounded-2xl text-xs flex items-center justify-center space-x-2 transition shadow-md shadow-[#f5ba41]/20 active:scale-[0.98]"
+            >
+              <Plus className="h-4 w-4" />
+              <span>+ Create New Invoice</span>
+            </button>
+          </div>
+
           {/* Navigation Links */}
-          <nav className="space-y-1">
+          <nav className="space-y-1.5 pt-1">
+            <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[#6e7073]">Modules</div>
             {navItems.map((item) => {
-              const isActive = item.href ? pathname === item.href : activeTab === item.id;
               const isAllowed = item.roles.includes(currentRole);
+              const isActive = item.href ? pathname === item.href : activeTab === item.id;
               const Icon = item.icon;
 
               if (item.href) {
@@ -159,22 +157,29 @@ export default function Navigation({
                     onClick={(e) => {
                       if (!isAllowed) {
                         e.preventDefault();
-                        alert('Admin authorization required.');
+                        alert('Only Admin users have access to Staff Management.');
                       }
                     }}
-                    className={`relative flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-semibold transition ${
-                      isActive
-                        ? 'text-white font-bold'
-                        : 'text-[#88898b] hover:text-white hover:bg-white/5'
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition ${
+                      !isAllowed
+                        ? 'opacity-30 cursor-not-allowed text-[#6e7073]'
+                        : isActive
+                        ? 'bg-white/10 text-white shadow-inner'
+                        : 'text-[#8c8d8f] hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    {isActive && (
-                      <span className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#f5ba41] rounded-r-full" />
-                    )}
                     <div className="flex items-center space-x-3">
-                      <Icon className={`h-4 w-4 ${isActive ? 'text-[#f5ba41]' : 'text-[#88898b]'}`} />
-                      <span>{item.name}</span>
+                      <Icon className={`h-4 w-4 ${isActive ? 'text-[#f5ba41]' : 'text-[#8c8d8f]'}`} />
+                      <div>
+                        <div>{item.name}</div>
+                        <div className="text-[10px] text-[#6e7073] font-normal">{item.subtitle}</div>
+                      </div>
                     </div>
+                    {item.badge && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#f5ba41]/20 text-[#f5ba41]">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               }
@@ -182,67 +187,79 @@ export default function Navigation({
               return (
                 <button
                   key={item.id}
-                  onClick={() => onTabChange && onTabChange(item.id)}
-                  className={`w-full relative flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-semibold transition text-left ${
-                    isActive
-                      ? 'text-white font-bold'
-                      : 'text-[#88898b] hover:text-white hover:bg-white/5'
+                  onClick={() => {
+                    if (isAllowed && onTabChange && item.id) {
+                      onTabChange(item.id);
+                    }
+                  }}
+                  disabled={!isAllowed}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-left ${
+                    !isAllowed
+                      ? 'opacity-30 cursor-not-allowed text-[#6e7073]'
+                      : isActive
+                      ? 'bg-white/10 text-white shadow-inner'
+                      : 'text-[#8c8d8f] hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  {isActive && (
-                    <span className="absolute -left-6 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#f5ba41] rounded-r-full" />
-                  )}
                   <div className="flex items-center space-x-3">
-                    <Icon className={`h-4 w-4 ${isActive ? 'text-[#f5ba41]' : 'text-[#88898b]'}`} />
-                    <span>{item.name}</span>
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-[#f5ba41]' : 'text-[#8c8d8f]'}`} />
+                    <div>
+                      <div>{item.name}</div>
+                      <div className="text-[10px] text-[#6e7073] font-normal">{item.subtitle}</div>
+                    </div>
                   </div>
-                  {item.badge && (
-                    <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-[#5b5fd8] text-white text-[10px] font-bold flex items-center justify-center">
-                      {item.badge}
-                    </span>
-                  )}
+                  <ChevronRight className={`h-3.5 w-3.5 ${isActive ? 'text-[#f5ba41]' : 'text-[#6e7073]'}`} />
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Footer Actions: Log Out / Quick Bill */}
-        <div className="pt-4 border-t border-white/10 space-y-2">
-          <button
-            onClick={onOpenNewVoucher}
-            className="w-full py-2.5 px-4 bg-[#f5ba41] hover:bg-[#e6ab33] text-[#232528] font-extrabold rounded-2xl text-xs flex items-center justify-center space-x-2 transition btn-pill shadow-md"
-          >
-            <Plus className="h-4 w-4" />
-            <span>+ Create Invoice</span>
-          </button>
+        {/* Footer & Live Systems Status */}
+        <div className="pt-4 border-t border-white/5 space-y-3">
+          <div className="p-3 rounded-2xl bg-[#1b1c1e] text-[11px] text-[#8c8d8f] space-y-1.5">
+            <div className="flex items-center justify-between font-bold text-[#c9c8c5]">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" /> Tally Bridge
+              </span>
+              <span className="font-mono text-[10px] text-emerald-400 font-bold">Port 9000</span>
+            </div>
+            <div className="flex items-center justify-between font-bold text-[#c9c8c5]">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#f5ba41]" /> Govt. NIC IRP
+              </span>
+              <span className="text-[10px] text-[#f5ba41] font-bold">1-Click IRN</span>
+            </div>
+          </div>
 
           <button
-            onClick={() => onRoleChange && onRoleChange(currentRole === 'admin' ? 'maker' : 'admin')}
-            className="w-full flex items-center space-x-3 px-4 py-2 text-xs font-semibold text-[#88898b] hover:text-white transition"
+            onClick={onOpenGpsModal}
+            className="w-full min-h-[40px] py-2 px-3 bg-white/5 hover:bg-white/10 text-[#c9c8c5] hover:text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition border border-white/5"
           >
-            <LogOut className="h-4 w-4" />
-            <span>Log Out / Switch</span>
+            <MapPin className="h-3.5 w-3.5 text-[#f5ba41]" />
+            <span>Field Staff Check-in</span>
           </button>
         </div>
       </aside>
 
-      {/* ================= MOBILE TOP HEADER (< 1024px) ================= */}
-      <header className="lg:hidden sticky top-0 z-40 bg-[#232528] text-white px-4 py-3 flex items-center justify-between shadow-md">
+      {/* ================= MOBILE HEADER (< 768px) ================= */}
+      <header className="md:hidden sticky top-0 z-30 bg-[#232528] text-white px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center space-x-2.5">
-          <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center">
-            <Box className="h-4 w-4 text-[#f5ba41]" />
+          <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center text-[#f5ba41]">
+            <Box className="h-4 w-4" />
           </div>
           <div>
-            <div className="font-extrabold text-sm text-white">Livekeep</div>
-            <div className="text-[10px] text-[#88898b]">Enterprise ERP</div>
+            <div className="font-black text-sm text-white flex items-center gap-1">
+              Livekeep <span className="text-[#f5ba41] text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/5">PRO</span>
+            </div>
+            <div className="text-[10px] text-[#8c8d8f]">Livekeeping Enterprises</div>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={onOpenNewVoucher}
-            className="h-8 px-3 bg-[#f5ba41] text-[#232528] font-extrabold rounded-xl text-xs flex items-center space-x-1"
+            className="h-8 px-3 bg-[#f5ba41] text-[#232528] font-black rounded-xl text-xs flex items-center space-x-1"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Bill</span>
@@ -251,44 +268,50 @@ export default function Navigation({
         </div>
       </header>
 
-      {/* ================= MOBILE BOTTOM TAB BAR (< 1024px) ================= */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#232528]/95 backdrop-blur-lg border-t border-white/10 px-2 py-1.5 flex items-center justify-around safe-area-pb">
-        <button
-          onClick={() => onTabChange && onTabChange('dashboard')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[56px] min-h-[44px] ${
-            activeTab === 'dashboard' ? 'text-[#f5ba41] font-bold' : 'text-[#88898b]'
-          }`}
-        >
-          <LayoutDashboard className="h-5 w-5" />
-          <span className="text-[10px] mt-0.5">Overview</span>
-        </button>
-
+      {/* ================= MOBILE BOTTOM TAB BAR (< 768px) ================= */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#232528]/95 backdrop-blur-xl border-t border-white/10 px-2 py-1.5 flex items-center justify-around safe-area-pb shadow-2xl">
         <button
           onClick={() => onTabChange && onTabChange('vouchers')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[56px] min-h-[44px] ${
-            activeTab === 'vouchers' ? 'text-[#f5ba41] font-bold' : 'text-[#88898b]'
+          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[64px] min-h-[48px] transition ${
+            activeTab === 'vouchers' && !pathname.includes('/users')
+              ? 'text-[#f5ba41] font-black'
+              : 'text-[#8c8d8f]'
           }`}
         >
-          <Receipt className="h-5 w-5" />
-          <span className="text-[10px] mt-0.5">Daybook</span>
+          <Receipt className="h-5 w-5 mb-0.5" />
+          <span className="text-[10px]">Daybook</span>
         </button>
 
         <button
-          onClick={() => onTabChange && onTabChange('statistics')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[56px] min-h-[44px] ${
-            activeTab === 'statistics' ? 'text-[#f5ba41] font-bold' : 'text-[#88898b]'
+          onClick={() => onTabChange && onTabChange('reports')}
+          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[64px] min-h-[48px] transition ${
+            activeTab === 'reports' && !pathname.includes('/users')
+              ? 'text-[#f5ba41] font-black'
+              : 'text-[#8c8d8f]'
           }`}
         >
-          <BarChart2 className="h-5 w-5" />
-          <span className="text-[10px] mt-0.5">Reports</span>
+          <BarChart3 className="h-5 w-5 mb-0.5" />
+          <span className="text-[10px]">Reports</span>
+        </button>
+
+        <button
+          onClick={onOpenGpsModal}
+          className="flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[64px] min-h-[48px] text-[#8c8d8f] hover:text-[#f5ba41] transition"
+        >
+          <MapPin className="h-5 w-5 mb-0.5" />
+          <span className="text-[10px]">GPS Check</span>
         </button>
 
         <Link
           href="/dashboard/users"
-          className="flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[56px] min-h-[44px] text-[#88898b]"
+          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[64px] min-h-[48px] transition ${
+            pathname.includes('/users')
+              ? 'text-[#f5ba41] font-black'
+              : 'text-[#8c8d8f]'
+          }`}
         >
-          <Settings className="h-5 w-5" />
-          <span className="text-[10px] mt-0.5">Staff</span>
+          <Users className="h-5 w-5 mb-0.5" />
+          <span className="text-[10px]">Staff</span>
         </Link>
       </nav>
     </>
