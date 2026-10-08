@@ -1,0 +1,70 @@
+{
+  "invoices": [
+    {
+      "voucher_number": "INV/2026-27/001",
+      "voucher_type": "sales_bill",
+      "party_details": {
+        "party_name": "Acme Industrial Solutions Pvt Ltd",
+        "party_gstin": "24AAACA12341ZV",
+        "billing_address": "Plot 42, GIDC Estate, Vatva, Ahmedabad, Gujarat - 382445",
+        "place_of_supply": "24-Gujarat"
+      },
+      "items": [
+        {
+          "item_name": "Industrial Sensor Probe X1",
+          "hsn_code": "90318000",
+          "quantity": 5,
+          "unit_price": 4500.00,
+          "tax_rate": 18,
+          "cgst_amount": 2025.00,
+          "sgst_amount": 2025.00,
+          "igst_amount": 0.00,
+          "total_item_amount": 26550.00
+        }
+      ],
+      "summary": {
+        "subtotal": 22500.00,
+        "total_tax": 4050.00,
+        "grand_total": 26550.00,
+        "status": "pending"
+      },
+      "compliance": {
+        "irn": "4b8a2c1d9e3f7a... (Pending Generation)",
+        "eway_bill_no": null
+      }
+    },
+    {
+      "voucher_number": "INV/2026-27/002",
+      "voucher_type": "sales_bill",
+      "party_details": {
+        "party_name": "Apex Retail Enterprises",
+        "party_gstin": "27AABCU9603R1ZM",
+        "billing_address": "Andheri East, Mumbai, Maharashtra - 400069",
+        "place_of_supply": "27-Maharashtra"
+      },
+      "items": [
+        {
+          "item_name": "Smart Terminal Controller",
+          "hsn_code": "84713010",
+          "quantity": 2,
+          "unit_price": 18000.00,
+          "tax_rate": 18,
+          "cgst_amount": 0.00,
+          "sgst_amount": 0.00,
+          "igst_amount": 6480.00,
+          "total_item_amount": 42480.00
+        }
+      ],
+      "summary": {
+        "subtotal": 36000.00,
+        "total_tax": 6480.00,
+        "grand_total": 42480.00,
+        "status": "approved"
+      },
+      "compliance": {
+        "irn": "18a45e908b21c43f761d90212389a0f4c3b21029384756102938475610293847",
+        "eway_bill_no": "241098765432"
+      }
+    }
+  ]
+}
