@@ -5,7 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { Voucher, UserRole, PaymentStatus } from '@/types/database';
 import sampleData from '@/data/sample_invoices.json';
 import confetti from 'canvas-confetti';
+import { queueOfflineVoucher } from '@/lib/services/offlineSync';
 import { 
+
   FileText, 
   ShieldCheck, 
   CheckCircle2, 
@@ -158,21 +160,28 @@ export default function Dashboard() {
     setPartyName('');
     setAmount('');
 
-    try {
-      await supabase.from('vouchers').insert([
-        {
-          organization_id: 'org-101',
-          voucher_number: newVoucher.voucher_number,
-          voucher_type: newVoucher.voucher_type,
-          party_name: newVoucher.party_name,
-          party_gstin: newVoucher.party_gstin,
-          total_amount: newVoucher.total_amount,
-          tax_amount: newVoucher.tax_amount,
-          status: 'pending'
+    if (typeof window !== 'undefined' && !navigator.onLine) {
+      queueOfflineVoucher(newVoucher);
+    } else {
+      try {
+        const { error } = await supabase.from('vouchers').insert([
+          {
+            organization_id: 'org-101',
+            voucher_number: newVoucher.voucher_number,
+            voucher_type: newVoucher.voucher_type,
+            party_name: newVoucher.party_name,
+            party_gstin: newVoucher.party_gstin,
+            total_amount: newVoucher.total_amount,
+            tax_amount: newVoucher.tax_amount,
+            status: 'pending'
+          }
+        ]);
+        if (error) {
+          queueOfflineVoucher(newVoucher);
         }
-      ]);
-    } catch (err) {
-      console.log('Saved to local session:', err);
+      } catch (err) {
+        queueOfflineVoucher(newVoucher);
+      }
     }
   };
 
