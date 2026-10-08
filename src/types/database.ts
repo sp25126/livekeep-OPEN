@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'maker' | 'checker';
+export type UserRole = 'admin' | 'manager' | 'maker' | 'checker';
 export type VoucherType = 'sales_bill' | 'quotation' | 'credit_note';
 export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'paid';
 
@@ -6,8 +6,20 @@ export interface Profile {
   id: string;
   organization_id: string;
   full_name: string;
+  email?: string;
   role: UserRole;
   created_at: string;
+}
+
+export interface AppUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  organization_id?: string;
+  created_at: string;
+  last_sign_in_at?: string;
+  status: 'active' | 'invited' | 'suspended';
 }
 
 export interface VoucherItem {

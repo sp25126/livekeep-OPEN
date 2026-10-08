@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Voucher, UserRole, PaymentStatus } from '@/types/database';
 import sampleData from '@/data/sample_invoices.json';
@@ -20,6 +21,7 @@ import {
   Building2,
   Receipt,
   UserCheck,
+  Users,
   TrendingUp,
   Zap,
   Download,
@@ -303,7 +305,7 @@ export default function Dashboard() {
               <span className="text-slate-400 px-2 flex items-center gap-1">
                 <UserCheck className="h-3.5 w-3.5" /> Role:
               </span>
-              {(['maker', 'checker', 'admin'] as UserRole[]).map((role) => (
+              {(['maker', 'checker', 'manager', 'admin'] as UserRole[]).map((role) => (
                 <button
                   key={role}
                   onClick={() => setActiveRole(role)}
@@ -315,6 +317,15 @@ export default function Dashboard() {
                 </button>
               ))}
             </div>
+
+            {activeRole === 'admin' && (
+              <Link
+                href="/dashboard/users"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/60 border border-purple-800/60 text-purple-300 hover:bg-purple-900/80 text-xs font-semibold transition"
+              >
+                <Users className="h-3.5 w-3.5 text-purple-400" /> Users & Access
+              </Link>
+            )}
 
             <button
               onClick={() => setIsGpsModalOpen(true)}
