@@ -38,6 +38,8 @@ export interface Voucher {
   approved_by?: string;
   irn_number?: string;
   eway_bill_no?: string;
+  synced_to_tally?: boolean;
+  tally_sync_error?: string;
   items?: VoucherItem[];
   created_at: string;
   updated_at: string;

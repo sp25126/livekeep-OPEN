@@ -1,0 +1,15 @@
+{
+  "name": "livekeeping-tally-bridge",
+  "version": "1.0.0",
+  "description": "Local Windows Tally Prime XML HTTP Bridge for Realtime Supabase Sync",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "axios": "^1.8.2",
+    "dotenv": "^16.4.7",
+    "xmlbuilder2": "^3.1.1"
+  }
+}

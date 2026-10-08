@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS public.vouchers (
   approved_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   irn_number TEXT,
   eway_bill_no TEXT,
+  synced_to_tally BOOLEAN DEFAULT false,
+  tally_sync_error TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
