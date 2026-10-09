@@ -256,7 +256,7 @@ export default function Navigation({
       </aside>
 
       {/* ================= MOBILE HEADER (< 768px) ================= */}
-      <header className="md:hidden sticky top-0 z-30 bg-[#232528] text-white px-4 py-3 flex items-center justify-between shadow-md">
+      <header className="md:hidden sticky top-0 z-30 w-full bg-[#232528] text-white px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center space-x-2.5">
           <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center text-[#f5ba41]">
             <Box className="h-4 w-4" />

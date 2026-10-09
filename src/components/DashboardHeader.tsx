@@ -159,35 +159,37 @@ export default function DashboardHeader({
   return (
     <div className="space-y-3 select-none">
       {/* 1. TOP BAR: Company Switcher & Date Range Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#fafaf8] border border-[#e5e3dc] rounded-[24px] p-3 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-[#fafaf8] border border-[#e5e3dc] rounded-[24px] p-2.5 sm:p-3 shadow-sm">
         
         {/* Company Switcher Dropdown */}
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <button
             onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
-            className="flex items-center space-x-2.5 px-3 py-2 rounded-2xl bg-white border border-[#e5e3dc] hover:border-[#f5ba41] transition shadow-xs text-left group"
+            className="w-full sm:w-auto flex items-center justify-between sm:justify-start space-x-2.5 px-3 py-2 rounded-2xl bg-white border border-[#e5e3dc] hover:border-[#f5ba41] transition shadow-xs text-left group"
           >
-            <div className="h-8 w-8 rounded-xl bg-[#232528] text-[#f5ba41] flex items-center justify-center font-black text-xs shrink-0">
-              <Building2 className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5 font-bold text-xs sm:text-sm text-[#232528] group-hover:text-black">
-                <span className="truncate max-w-[160px] sm:max-w-[200px]">{currentCompany.name}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-[#88898b] group-hover:text-[#232528]" />
+            <div className="flex items-center space-x-2.5 truncate">
+              <div className="h-8 w-8 rounded-xl bg-[#232528] text-[#f5ba41] flex items-center justify-center font-black text-xs shrink-0">
+                <Building2 className="h-4 w-4" />
               </div>
-              <div className="text-[10px] text-[#88898b] flex items-center gap-1 font-medium">
-                <span>{currentCompany.gstin}</span>
-                <span>•</span>
-                <span className={currentCompany.daysSinceLastSync > 0 ? 'text-amber-600 font-semibold' : 'text-emerald-600'}>
-                  {formatRelativeSync(currentCompany.daysSinceLastSync)}
-                </span>
+              <div className="truncate">
+                <div className="flex items-center space-x-1 font-bold text-xs sm:text-sm text-[#232528] group-hover:text-black">
+                  <span className="truncate max-w-[170px] sm:max-w-[220px]">{currentCompany.name}</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-[#88898b] group-hover:text-[#232528] shrink-0" />
+                </div>
+                <div className="text-[10px] text-[#88898b] flex items-center gap-1 font-medium truncate">
+                  <span>{currentCompany.gstin}</span>
+                  <span>•</span>
+                  <span className={currentCompany.daysSinceLastSync > 0 ? 'text-amber-600 font-semibold' : 'text-emerald-600'}>
+                    {formatRelativeSync(currentCompany.daysSinceLastSync)}
+                  </span>
+                </div>
               </div>
             </div>
           </button>
 
           {/* Dropdown Menu */}
           {isCompanyDropdownOpen && (
-            <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-[#e5e3dc] rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in-50 zoom-in-95">
+            <div className="absolute left-0 top-full mt-2 w-full sm:w-72 bg-white border border-[#e5e3dc] rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in-50 zoom-in-95">
               <div className="px-3 py-1.5 text-[10px] font-bold text-[#88898b] uppercase tracking-wider">
                 Select Tally Company
               </div>
@@ -218,10 +220,10 @@ export default function DashboardHeader({
         </div>
 
         {/* Financial Date Range Selector (< 01 Apr 24 – 31 Mar 25 >) */}
-        <div className="flex items-center space-x-1.5 bg-white border border-[#e5e3dc] rounded-2xl p-1 shadow-xs">
+        <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start space-x-1.5 bg-white border border-[#e5e3dc] rounded-2xl p-1 shadow-xs">
           <button
             onClick={() => shiftFinancialYear(-1)}
-            className="h-8 w-8 rounded-xl hover:bg-[#f6f5f0] text-[#555] hover:text-[#232528] flex items-center justify-center transition"
+            className="h-8 w-8 rounded-xl hover:bg-[#f6f5f0] text-[#555] hover:text-[#232528] flex items-center justify-center transition shrink-0"
             title="Previous Financial Year"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -229,16 +231,16 @@ export default function DashboardHeader({
 
           <button
             onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-            className="px-3 py-1.5 text-xs font-bold text-[#232528] hover:bg-[#f6f5f0] rounded-xl flex items-center space-x-2 transition"
+            className="flex-1 sm:flex-initial px-3 py-1.5 text-xs font-bold text-[#232528] hover:bg-[#f6f5f0] rounded-xl flex items-center justify-center space-x-2 transition"
           >
-            <Calendar className="h-3.5 w-3.5 text-[#f5ba41]" />
-            <span className="font-mono">{dateRange.label}</span>
-            <ChevronDown className="h-3 w-3 text-[#88898b]" />
+            <Calendar className="h-3.5 w-3.5 text-[#f5ba41] shrink-0" />
+            <span className="font-mono whitespace-nowrap">{dateRange.label}</span>
+            <ChevronDown className="h-3 w-3 text-[#88898b] shrink-0" />
           </button>
 
           <button
             onClick={() => shiftFinancialYear(1)}
-            className="h-8 w-8 rounded-xl hover:bg-[#f6f5f0] text-[#555] hover:text-[#232528] flex items-center justify-center transition"
+            className="h-8 w-8 rounded-xl hover:bg-[#f6f5f0] text-[#555] hover:text-[#232528] flex items-center justify-center transition shrink-0"
             title="Next Financial Year"
           >
             <ChevronRight className="h-4 w-4" />
@@ -300,9 +302,9 @@ export default function DashboardHeader({
 
       {/* 2. SYNC HEALTH WARNING BANNER (Not Synced since X days | Sync Now (!)) */}
       {currentCompany.daysSinceLastSync > 0 && (
-        <div className="flex items-center justify-between bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl px-4 py-2.5 shadow-xs animate-in fade-in-50 duration-200">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-3 sm:px-4 sm:py-2.5 shadow-xs animate-in fade-in-50 duration-200">
           <div className="flex items-center space-x-2.5 text-xs font-semibold">
-            <div className="h-6 w-6 rounded-full bg-rose-200 text-rose-800 flex items-center justify-center shrink-0 font-black">
+            <div className="h-6 w-6 rounded-full bg-rose-200 text-rose-800 flex items-center justify-center shrink-0 font-black text-xs">
               !
             </div>
             <div>
@@ -314,7 +316,7 @@ export default function DashboardHeader({
           <button
             onClick={onTriggerSync}
             disabled={isSyncing}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50"
+            className="w-full sm:w-auto flex items-center justify-center space-x-1.5 px-4 py-2 sm:py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50 shrink-0"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
             <span>{isSyncing ? 'Syncing...' : 'Sync Now (!)'}</span>

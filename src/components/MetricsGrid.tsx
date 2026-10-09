@@ -44,25 +44,25 @@ export const formatIndianCurrency = (amount: number): string => {
 export default function MetricsGrid({ vouchers, isLoading = false, onSelectMetric }: MetricsGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div
             key={i}
-            className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[24px] p-4 animate-pulse space-y-4"
+            className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[20px] sm:rounded-[24px] p-3 sm:p-4 animate-pulse space-y-3 sm:space-y-4"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-2xl bg-[#e5e3dc]/70" />
-                <div className="space-y-1.5">
-                  <div className="h-3 w-16 bg-[#e5e3dc]/80 rounded" />
-                  <div className="h-2 w-24 bg-[#e5e3dc]/50 rounded" />
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl bg-[#e5e3dc]/70 shrink-0" />
+                <div className="space-y-1">
+                  <div className="h-3 w-12 sm:w-16 bg-[#e5e3dc]/80 rounded" />
+                  <div className="h-2 w-16 sm:w-24 bg-[#e5e3dc]/50 rounded hidden sm:block" />
                 </div>
               </div>
-              <div className="h-4 w-12 bg-[#e5e3dc]/60 rounded-full" />
+              <div className="h-3.5 w-10 bg-[#e5e3dc]/60 rounded-full" />
             </div>
             <div className="pt-2 border-t border-[#f0eee6] flex justify-between items-center">
-              <div className="h-6 w-24 bg-[#e5e3dc]/80 rounded" />
-              <div className="h-3 w-8 bg-[#e5e3dc]/50 rounded" />
+              <div className="h-5 sm:h-6 w-20 sm:w-24 bg-[#e5e3dc]/80 rounded" />
+              <div className="h-3 w-6 sm:w-8 bg-[#e5e3dc]/50 rounded" />
             </div>
           </div>
         ))}
@@ -204,42 +204,42 @@ export default function MetricsGrid({ vouchers, isLoading = false, onSelectMetri
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
       {metrics.map((item) => {
         const Icon = item.icon;
         return (
           <div
             key={item.id}
             onClick={() => onSelectMetric && onSelectMetric(item.id)}
-            className="group relative bg-[#fafaf8] hover:bg-white border border-[#e5e3dc] hover:border-[#f5ba41] rounded-[24px] p-4 transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between"
+            className="group relative bg-[#fafaf8] hover:bg-white border border-[#e5e3dc] hover:border-[#f5ba41] rounded-[20px] sm:rounded-[24px] p-3 sm:p-4 transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <div className={`h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 ${item.accentColor} shadow-inner`}>
-                  <Icon className="h-5 w-5" />
+            <div className="flex items-start justify-between mb-2 sm:mb-3 gap-1">
+              <div className="flex items-center space-x-2 sm:space-x-3 truncate">
+                <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${item.accentColor} shadow-inner`}>
+                  <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <div>
-                  <h4 className="font-bold text-xs sm:text-sm text-[#232528] group-hover:text-black">
+                <div className="truncate">
+                  <h4 className="font-bold text-xs sm:text-sm text-[#232528] group-hover:text-black truncate">
                     {item.title}
                   </h4>
-                  <p className="text-[10px] text-[#88898b] font-medium line-clamp-1">
+                  <p className="text-[10px] text-[#88898b] font-medium truncate hidden sm:block">
                     {item.subtitle}
                   </p>
                 </div>
               </div>
 
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${item.badgeBg}`}>
+              <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full shrink-0 ${item.badgeBg}`}>
                 {item.badgeText}
               </span>
             </div>
 
-            <div className="flex items-baseline justify-between pt-2 border-t border-[#f0eee6]">
-              <span className="font-black text-base sm:text-lg text-[#232528] font-mono tracking-tight">
+            <div className="flex items-baseline justify-between pt-1.5 sm:pt-2 border-t border-[#f0eee6]">
+              <span className="font-black text-sm sm:text-lg text-[#232528] font-mono tracking-tight truncate">
                 {formatIndianCurrency(item.amount)}
               </span>
-              <div className="text-[11px] font-bold text-[#88898b] group-hover:text-[#232528] flex items-center gap-0.5 transition">
+              <div className="text-[10px] sm:text-[11px] font-bold text-[#88898b] group-hover:text-[#232528] flex items-center gap-0.5 transition shrink-0 ml-1">
                 <span>View</span>
-                <ChevronRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5 transition group-hover:translate-x-0.5" />
               </div>
             </div>
           </div>

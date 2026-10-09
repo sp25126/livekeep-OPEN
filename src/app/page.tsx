@@ -563,7 +563,7 @@ export default function Dashboard() {
   const approvedCount = vouchers.filter((v) => v.status === 'approved' || v.status === 'paid').length;
 
   return (
-    <div className="flex min-h-screen bg-[#ecebe6] text-[#232528] font-sans pb-16 md:pb-0">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#ecebe6] text-[#232528] font-sans pb-20 md:pb-0">
       {/* Dual Navigation (Matte Charcoal Sidebar on Desktop & Bottom Bar on Mobile) */}
       <Navigation
         currentRole={activeRole}
@@ -579,7 +579,7 @@ export default function Dashboard() {
       />
 
       {/* Main Responsive Content */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
+      <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-5 max-w-7xl mx-auto w-full">
         
         {/* 1. Dashboard Header (Company Switcher, Sync Warning Banner, Date Range Selector) */}
         <DashboardHeader
