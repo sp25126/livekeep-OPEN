@@ -22,7 +22,8 @@ import {
   Plus, 
   MapPin, 
   RefreshCw, 
-  Sparkles
+  Sparkles,
+  Edit3
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -36,6 +37,7 @@ export default function Dashboard() {
   
   // Modal states
   const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isGpsModalOpen, setIsGpsModalOpen] = useState<boolean>(false);
   const [gpsStatus, setGpsStatus] = useState<string>('');
   const [generatingIrnId, setGeneratingIrnId] = useState<string | null>(null);
@@ -45,6 +47,13 @@ export default function Dashboard() {
   const [partyGstin, setPartyGstin] = useState('24AAACA12341ZV');
   const [amount, setAmount] = useState('');
   const [voucherType, setVoucherType] = useState<'sales_bill' | 'quotation'>('sales_bill');
+
+  // Edit Voucher Form State
+  const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
+  const [editPartyName, setEditPartyName] = useState('');
+  const [editPartyGstin, setEditPartyGstin] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editVoucherType, setEditVoucherType] = useState<'sales_bill' | 'quotation'>('sales_bill');
 
   useEffect(() => {
     // Load initial mock data
@@ -265,6 +274,95 @@ export default function Dashboard() {
     }
   };
 
+  // Open Edit Voucher Modal
+  const handleOpenEditModal = (voucher: Voucher) => {
+    setEditingVoucher(voucher);
+    setEditPartyName(voucher.party_name);
+    setEditPartyGstin(voucher.party_gstin || '24AAACA12341ZV');
+    const taxableAmount = voucher.total_amount - (voucher.tax_amount || 0);
+    setEditAmount(String(Math.round(taxableAmount > 0 ? taxableAmount : voucher.total_amount)));
+    setEditVoucherType(voucher.voucher_type as any);
+    setIsEditModalOpen(true);
+  };
+
+  // Save Voucher Edits
+  const handleSaveEditVoucher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVoucher || !editPartyName || !editAmount) return;
+
+    const numericAmount = parseFloat(editAmount);
+    const sellerStateCode = '24';
+    const buyerStateCode = editPartyGstin?.trim().substring(0, 2) || '24';
+
+    const taxCalc = calculateInvoiceTaxes(
+      [
+        {
+          itemName: 'Commercial Supplies',
+          hsnCode: '84818030',
+          quantity: 1,
+          unitPrice: numericAmount,
+          taxRate: 18
+        }
+      ],
+      sellerStateCode,
+      buyerStateCode
+    );
+
+    const updatedVoucher: Voucher = {
+      ...editingVoucher,
+      party_name: editPartyName,
+      party_gstin: editPartyGstin,
+      voucher_type: editVoucherType,
+      total_amount: taxCalc.grandTotal,
+      tax_amount: taxCalc.totalTax,
+      items: taxCalc.itemBreakdowns.map((item) => ({
+        item_name: item.itemName || 'Commercial Supply',
+        hsn_code: item.hsnCode,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        tax_rate: item.taxRate,
+        cgst_amount: item.cgstAmount,
+        sgst_amount: item.sgstAmount,
+        igst_amount: item.igstAmount,
+        total_item_amount: item.totalAmount
+      })),
+      updated_at: new Date().toISOString()
+    };
+
+    setVouchers((prev) => prev.map((v) => (v.id === updatedVoucher.id ? updatedVoucher : v)));
+    if (selectedVoucher && selectedVoucher.id === updatedVoucher.id) {
+      setSelectedVoucher(updatedVoucher);
+    }
+    setIsEditModalOpen(false);
+
+    try {
+      await supabase.from('vouchers').update({
+        party_name: updatedVoucher.party_name,
+        party_gstin: updatedVoucher.party_gstin,
+        voucher_type: updatedVoucher.voucher_type,
+        total_amount: updatedVoucher.total_amount,
+        tax_amount: updatedVoucher.tax_amount,
+        updated_at: updatedVoucher.updated_at
+      }).eq('id', updatedVoucher.id);
+    } catch (err) {
+      console.log('Saved voucher edit locally:', err);
+    }
+  };
+
+  // Delete Voucher
+  const handleDeleteVoucher = async (id: string) => {
+    setVouchers((prev) => prev.filter((v) => v.id !== id));
+    if (selectedVoucher && selectedVoucher.id === id) {
+      setSelectedVoucher(null);
+    }
+
+    try {
+      await supabase.from('vouchers').delete().eq('id', id);
+    } catch (err) {
+      console.log('Deleted voucher locally:', err);
+    }
+  };
+
   // GPS Sales Force Log Simulation
   const handleCaptureGps = () => {
     setGpsStatus('Acquiring GPS location...');
@@ -412,6 +510,8 @@ export default function Dashboard() {
             onUpdateStatus={handleUpdateStatus}
             onGenerateIrn={handleGenerateIrn}
             generatingIrnId={generatingIrnId}
+            onEditVoucher={handleOpenEditModal}
+            onDeleteVoucher={handleDeleteVoucher}
           />
         ) : (
           <ReportsView />
@@ -426,7 +526,90 @@ export default function Dashboard() {
         onUpdateStatus={handleUpdateStatus}
         onGenerateIrn={handleGenerateIrn}
         generatingIrnId={generatingIrnId}
+        onEdit={handleOpenEditModal}
+        onDelete={handleDeleteVoucher}
       />
+
+      {/* Edit Voucher Modal */}
+      {isEditModalOpen && editingVoucher && (
+        <div className="fixed inset-0 z-50 bg-[#232528]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[32px] max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#e5e3dc] pb-3">
+              <h3 className="text-base sm:text-lg font-black text-[#232528] flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-[#f5ba41]" /> Edit Voucher ({editingVoucher.voucher_number})
+              </h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-[#88898b] hover:text-[#232528] p-2 text-base">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveEditVoucher} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Party / Customer Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editPartyName}
+                  onChange={(e) => setEditPartyName(e.target.value)}
+                  placeholder="e.g. Reliance Logistics Ltd"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Party GSTIN (15 Digits)</label>
+                <input
+                  type="text"
+                  value={editPartyGstin}
+                  onChange={(e) => setEditPartyGstin(e.target.value)}
+                  placeholder="24AAACA12341ZV"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Voucher Type</label>
+                <select
+                  value={editVoucherType}
+                  onChange={(e) => setEditVoucherType(e.target.value as any)}
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                >
+                  <option value="sales_bill">Sales Bill (Tax Invoice)</option>
+                  <option value="quotation">Quotation / Proforma</option>
+                  <option value="credit_note">Credit Note</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Subtotal Taxable Amount (₹)</label>
+                <input
+                  type="number"
+                  required
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  placeholder="25000"
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                />
+                <span className="text-[11px] text-[#88898b] mt-1 block">Taxes (CGST/SGST or IGST) will automatically recalculate.</span>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#e5e3dc]">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="min-h-[44px] px-5 py-2 text-xs font-bold text-[#88898b] hover:text-[#232528] bg-[#f6f5f0] rounded-full btn-pill"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="min-h-[44px] px-6 py-2 text-xs font-bold text-[#232528] bg-[#f5ba41] hover:bg-[#e6ab33] rounded-full shadow-md shadow-[#f5ba41]/30 transition btn-pill"
+                >
+                  Update & Recalculate
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* New Sales Bill Modal */}
       {isNewModalOpen && (

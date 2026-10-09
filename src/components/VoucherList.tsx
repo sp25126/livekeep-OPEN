@@ -18,7 +18,9 @@ import {
   ShieldCheck,
   RefreshCw,
   Share2,
-  ChevronRight
+  ChevronRight,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 
 interface VoucherListProps {
@@ -28,6 +30,8 @@ interface VoucherListProps {
   onUpdateStatus: (id: string, status: PaymentStatus) => void;
   onGenerateIrn: (id: string) => void;
   generatingIrnId: string | null;
+  onEditVoucher?: (voucher: Voucher) => void;
+  onDeleteVoucher?: (id: string) => void;
 }
 
 export default function VoucherList({
@@ -36,7 +40,9 @@ export default function VoucherList({
   onSelectVoucher,
   onUpdateStatus,
   onGenerateIrn,
-  generatingIrnId
+  generatingIrnId,
+  onEditVoucher,
+  onDeleteVoucher
 }: VoucherListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -155,6 +161,30 @@ export default function VoucherList({
               <div>{getStatusBadge(voucher.status)}</div>
 
               <div className="flex items-center space-x-1.5" onClick={(e) => e.stopPropagation()}>
+                {onEditVoucher && (
+                  <button
+                    onClick={() => onEditVoucher(voucher)}
+                    title="Edit Voucher"
+                    className="p-2 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] rounded-full transition btn-pill"
+                  >
+                    <Edit3 className="h-3.5 w-3.5 text-[#88898b]" />
+                  </button>
+                )}
+
+                {onDeleteVoucher && (activeRole === 'admin' || activeRole === 'manager' || activeRole === 'checker') && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Delete voucher ${voucher.voucher_number}?`)) {
+                        onDeleteVoucher(voucher.id);
+                      }
+                    }}
+                    title="Delete Voucher"
+                    className="p-2 bg-[#fbeaea] hover:bg-[#f7d6d6] text-[#b91c1c] rounded-full transition btn-pill"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
                 <button
                   onClick={(e) => handleWhatsAppShare(e, voucher)}
                   className="min-h-[36px] px-3 py-1.5 bg-[#D2DEC9] text-[#2b3e24] font-bold rounded-full text-xs flex items-center gap-1 btn-pill"
@@ -237,6 +267,30 @@ export default function VoucherList({
                   </td>
                   <td className="py-4 px-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end space-x-1.5">
+                      {onEditVoucher && (
+                        <button
+                          onClick={() => onEditVoucher(voucher)}
+                          title="Edit Voucher"
+                          className="p-2 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] rounded-full transition btn-pill"
+                        >
+                          <Edit3 className="h-3.5 w-3.5 text-[#88898b]" />
+                        </button>
+                      )}
+
+                      {onDeleteVoucher && (activeRole === 'admin' || activeRole === 'manager' || activeRole === 'checker') && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete voucher ${voucher.voucher_number}?`)) {
+                              onDeleteVoucher(voucher.id);
+                            }
+                          }}
+                          title="Delete Voucher"
+                          className="p-2 bg-[#fbeaea] hover:bg-[#f7d6d6] text-[#b91c1c] rounded-full transition btn-pill"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+
                       <button
                         onClick={(e) => handleWhatsAppShare(e, voucher)}
                         title="Send on WhatsApp"

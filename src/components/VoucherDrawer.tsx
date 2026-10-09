@@ -16,7 +16,9 @@ import {
   ShieldCheck,
   RefreshCw,
   PhoneCall,
-  Sparkles
+  Sparkles,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 
 interface VoucherDrawerProps {
@@ -26,6 +28,8 @@ interface VoucherDrawerProps {
   onUpdateStatus: (id: string, status: PaymentStatus) => void;
   onGenerateIrn: (id: string) => void;
   generatingIrnId: string | null;
+  onEdit?: (voucher: Voucher) => void;
+  onDelete?: (id: string) => void;
 }
 
 export default function VoucherDrawer({
@@ -34,7 +38,9 @@ export default function VoucherDrawer({
   activeRole,
   onUpdateStatus,
   onGenerateIrn,
-  generatingIrnId
+  generatingIrnId,
+  onEdit,
+  onDelete
 }: VoucherDrawerProps) {
   if (!voucher) return null;
 
@@ -182,7 +188,35 @@ export default function VoucherDrawer({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-5 border-t border-[#e5e3dc] bg-[#fafaf8] sticky bottom-0 z-10 flex flex-wrap gap-2 justify-end">
+        <div className="p-5 border-t border-[#e5e3dc] bg-[#fafaf8] sticky bottom-0 z-10 flex flex-wrap gap-2 justify-end items-center">
+          {onDelete && (activeRole === 'admin' || activeRole === 'manager' || activeRole === 'checker') && (
+            <button
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to delete or cancel voucher ${voucher.voucher_number}?`)) {
+                  onDelete(voucher.id);
+                  onClose();
+                }
+              }}
+              className="min-h-[44px] px-4 py-2 bg-[#fbeaea] hover:bg-[#f7d6d6] text-[#b91c1c] font-bold rounded-full text-xs flex items-center gap-1.5 btn-pill transition mr-auto"
+              title="Delete or cancel this voucher"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete</span>
+            </button>
+          )}
+
+          {onEdit && (
+            <button
+              onClick={() => {
+                onEdit(voucher);
+              }}
+              className="min-h-[44px] px-5 py-2 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] font-bold rounded-full text-xs flex items-center gap-1.5 btn-pill transition"
+            >
+              <Edit3 className="h-4 w-4 text-[#88898b]" />
+              <span>Edit</span>
+            </button>
+          )}
+
           <button
             onClick={handleDownloadPdf}
             className="min-h-[44px] px-5 py-2 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] font-bold rounded-full text-xs flex items-center gap-1.5 btn-pill"
