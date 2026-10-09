@@ -74,6 +74,7 @@ live-keeping_open/
 │   │       ├── inventory/
 │   │       │   └── page.tsx         # Inventory tracking & Negative Stock Alert Dashboard
 │   │       ├── reports/
+│   │       │   ├── page.tsx         # Categorized Reports Hub (Accounting Reports & My Entries)
 │   │       │   └── inactive/
 │   │       │       └── page.tsx     # Inactive Customer Analytics (30-180+ Days) & WhatsApp Re-engagement
 │   │       └── users/
@@ -82,6 +83,15 @@ live-keeping_open/
 │   ├── components/                  # Modular React UI Components
 │   │   ├── Navigation.tsx           # Responsive Dual Navigation (Desktop Sidebar + Mobile Bottom Tabs)
 │   │   ├── Sidebar.tsx              # Standalone RBAC Sidebar for admin pages
+│   │   ├── DashboardHeader.tsx      # Multi-Company Switcher, Sync Health Banner & Financial Date Range Picker
+│   │   ├── MetricsGrid.tsx          # 8 Standard Financial Metric Cards (Sales, Receivables, Purchase, etc.)
+│   │   ├── CreateTransactionSheet.tsx # 11-Voucher Class Creation Bottom Sheet / Modal
+│   │   ├── forms/
+│   │   │   └── vouchers/
+│   │   │       ├── OrderForm.tsx    # Sales & Purchase Order builder with terms & delivery dates
+│   │   │       ├── AdjustmentForm.tsx # Journal (multi-Dr/Cr), Credit Note & Debit Note with reason codes
+│   │   │       ├── ContraForm.tsx   # Restricted Cash ⇋ Bank internal transfer form
+│   │   │       └── CashFlowForm.tsx # Receipt & Payment with 1-click invoice settlement selector
 │   │   ├── VoucherList.tsx          # Responsive Daybook (Desktop multi-column + Mobile card stack)
 │   │   ├── VoucherDrawer.tsx        # Slide-over invoice drawer on desktop / Bottom sheet on mobile
 │   │   ├── ReportsView.tsx          # Receivables Aging ("Money to Collect"), Scheduler Modal, P&L & Balance Sheet

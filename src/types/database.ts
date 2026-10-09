@@ -1,12 +1,16 @@
 export type UserRole = 'admin' | 'manager' | 'maker' | 'checker';
 export type VoucherType = 
-  | 'sales_bill' 
-  | 'quotation' 
-  | 'receipt' 
-  | 'payment' 
-  | 'contra' 
-  | 'purchase_order' 
-  | 'credit_note' 
+  | 'quotation'
+  | 'sales_bill'
+  | 'receipt'
+  | 'payment'
+  | 'sales_order'
+  | 'purchase'
+  | 'journal'
+  | 'contra'
+  | 'purchase_order'
+  | 'credit_note'
+  | 'debit_note'
   | 'delivery_challan';
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'paid' | 'cancelled';
@@ -43,6 +47,12 @@ export interface VoucherItem {
   total_item_amount: number;
 }
 
+export interface LedgerEntry {
+  ledger_name: string;
+  amount: number;
+  type: 'dr' | 'cr';
+}
+
 export interface Voucher {
   id: string;
   organization_id: string;
@@ -66,6 +76,22 @@ export interface Voucher {
   to_account?: string;
   payment_mode?: 'cash' | 'bank' | 'cheque' | 'upi';
   instrument_number?: string;
+  // Order specific
+  order_number?: string;
+  terms_of_delivery?: string;
+  expected_delivery_date?: string;
+  // Adjustment specific (Credit Note, Debit Note, Journal)
+  original_invoice_no?: string;
+  original_invoice_date?: string;
+  reason_code?: string;
+  reversed_gst?: number;
+  // Multi-ledger Journal
+  debit_ledgers?: LedgerEntry[];
+  credit_ledgers?: LedgerEntry[];
+  // Settlement specific
+  against_invoice_ref?: string;
+  voucher_date?: string;
+  narration?: string;
   created_at: string;
   updated_at: string;
 }

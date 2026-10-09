@@ -13,6 +13,9 @@ import Navigation from '@/components/Navigation';
 import VoucherList from '@/components/VoucherList';
 import VoucherDrawer from '@/components/VoucherDrawer';
 import ReportsView from '@/components/ReportsView';
+import DashboardHeader, { DateRange, CompanyInfo } from '@/components/DashboardHeader';
+import MetricsGrid from '@/components/MetricsGrid';
+import CreateTransactionSheet from '@/components/CreateTransactionSheet';
 
 import { 
   TrendingUp, 
@@ -31,11 +34,31 @@ export default function Dashboard() {
   const [activeRole, setActiveRole] = useState<UserRole>('checker');
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('vouchers');
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   
+  // Financial Date Range & Company State
+  const [currentCompany, setCurrentCompany] = useState<CompanyInfo>({
+    id: 'org-101',
+    name: 'LiveTech Pvt Ltd',
+    gstin: '24AAACL9999P1Z2',
+    lastSyncedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(),
+    syncStatus: 'stale',
+    daysSinceLastSync: 28
+  });
+
+  const [dateRange, setDateRange] = useState<DateRange>({
+    startDate: '2024-04-01',
+    endDate: '2025-03-31',
+    label: '01 Apr 24 – 31 Mar 25',
+    preset: 'current_fy'
+  });
+
   // Selected voucher for bottom sheet / slide-over preview
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   
   // Modal states
+  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState<boolean>(false);
+  const [createSheetInitialType, setCreateSheetInitialType] = useState<VoucherType | undefined>(undefined);
   const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isGpsModalOpen, setIsGpsModalOpen] = useState<boolean>(false);
@@ -62,6 +85,43 @@ export default function Dashboard() {
   const [editToAccount, setEditToAccount] = useState('Cash in Hand');
   const [editPaymentMode, setEditPaymentMode] = useState<'bank' | 'cash' | 'cheque' | 'upi'>('bank');
   const [editInstrumentNo, setEditInstrumentNo] = useState('');
+
+  // Global Keyboard Shortcuts (Alt + S, Alt + R, Alt + P, Alt + C, Alt + Q, Alt + J)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey) {
+        const key = e.key.toLowerCase();
+        if (key === 's') {
+          e.preventDefault();
+          setCreateSheetInitialType('sales_bill');
+          setIsCreateSheetOpen(true);
+        } else if (key === 'r') {
+          e.preventDefault();
+          setCreateSheetInitialType('receipt');
+          setIsCreateSheetOpen(true);
+        } else if (key === 'p') {
+          e.preventDefault();
+          setCreateSheetInitialType('payment');
+          setIsCreateSheetOpen(true);
+        } else if (key === 'c') {
+          e.preventDefault();
+          setCreateSheetInitialType('contra');
+          setIsCreateSheetOpen(true);
+        } else if (key === 'q') {
+          e.preventDefault();
+          setCreateSheetInitialType('quotation');
+          setIsCreateSheetOpen(true);
+        } else if (key === 'j') {
+          e.preventDefault();
+          setCreateSheetInitialType('journal');
+          setIsCreateSheetOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     // Load initial mock data
@@ -433,6 +493,71 @@ export default function Dashboard() {
     }
   };
 
+  // Sync Trigger Handler
+  const handleTriggerSync = async () => {
+    setIsSyncing(true);
+    try {
+      await new Promise((r) => setTimeout(r, 1000));
+      setCurrentCompany((prev) => ({
+        ...prev,
+        lastSyncedAt: new Date().toISOString(),
+        daysSinceLastSync: 0,
+        syncStatus: 'synced'
+      }));
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.5 }
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Handle Create Transaction from 11-voucher sheet
+  const handleCreateTransaction = async (voucherData: Partial<Voucher>) => {
+    const nextNum = voucherData.voucher_number || `VCH/2026-27/${String(vouchers.length + 1).padStart(3, '0')}`;
+    const newVch: Voucher = {
+      id: `v-${Date.now()}`,
+      organization_id: currentCompany.id || 'org-101',
+      voucher_number: nextNum,
+      voucher_type: voucherData.voucher_type || 'sales_bill',
+      party_name: voucherData.party_name || 'Cash Account',
+      party_gstin: voucherData.party_gstin,
+      total_amount: voucherData.total_amount || 0,
+      tax_amount: voucherData.tax_amount || 0,
+      status: 'pending',
+      from_account: voucherData.from_account,
+      to_account: voucherData.to_account,
+      payment_mode: voucherData.payment_mode,
+      instrument_number: voucherData.instrument_number,
+      order_number: voucherData.order_number,
+      expected_delivery_date: voucherData.expected_delivery_date,
+      terms_of_delivery: voucherData.terms_of_delivery,
+      original_invoice_no: voucherData.original_invoice_no,
+      original_invoice_date: voucherData.original_invoice_date,
+      reason_code: voucherData.reason_code,
+      reversed_gst: voucherData.reversed_gst,
+      debit_ledgers: voucherData.debit_ledgers,
+      credit_ledgers: voucherData.credit_ledgers,
+      against_invoice_ref: voucherData.against_invoice_ref,
+      voucher_date: voucherData.voucher_date,
+      narration: voucherData.narration,
+      items: voucherData.items || [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    setVouchers((prev) => [newVch, ...prev]);
+    confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+
+    try {
+      await supabase.from('vouchers').insert([newVch]);
+    } catch (err) {
+      queueOfflineVoucher(newVch);
+    }
+  };
+
   const totalRevenue = vouchers.reduce((acc, v) => acc + (v.status === 'approved' || v.status === 'paid' ? v.total_amount : 0), 0);
   const pendingCount = vouchers.filter((v) => v.status === 'pending').length;
   const approvedCount = vouchers.filter((v) => v.status === 'approved' || v.status === 'paid').length;
@@ -444,101 +569,48 @@ export default function Dashboard() {
         currentRole={activeRole}
         onRoleChange={setActiveRole}
         isConnected={isConnected}
-        onOpenNewVoucher={() => setIsNewModalOpen(true)}
+        onOpenNewVoucher={() => {
+          setCreateSheetInitialType(undefined);
+          setIsCreateSheetOpen(true);
+        }}
         onOpenGpsModal={() => setIsGpsModalOpen(true)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
       {/* Main Responsive Content */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
-        {/* Executive Metric Pastel KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {/* Card 1: Approved Sales (Pastel Sage Green) */}
-          <div className="p-4 sm:p-5 rounded-[28px] bg-[#d2dec9] text-[#24351e] shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between text-[#24351e]/80 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Approved Sales</span>
-                <span className="p-1 rounded-full bg-[#bccbb2] text-[#24351e]">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                </span>
-              </div>
-              <div className="text-lg sm:text-2xl font-black text-[#24351e] font-mono mt-1">
-                ₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
-              </div>
-              <div className="text-[10px] sm:text-xs text-[#24351e]/80 mt-1 font-bold">B2B GST Tax Invoices</div>
-            </div>
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-5 max-w-7xl mx-auto w-full">
+        
+        {/* 1. Dashboard Header (Company Switcher, Sync Warning Banner, Date Range Selector) */}
+        <DashboardHeader
+          currentCompany={currentCompany}
+          onCompanyChange={(comp) => setCurrentCompany(comp)}
+          dateRange={dateRange}
+          onDateRangeChange={(range) => setDateRange(range)}
+          onTriggerSync={handleTriggerSync}
+          isSyncing={isSyncing}
+        />
 
-            {/* Subtle Sparkline Wave */}
-            <div className="w-full h-5 pt-2">
-              <svg viewBox="0 0 100 20" className="w-full h-full stroke-[#4e6a43] fill-none" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M0,15 Q25,3 50,12 T100,6" />
-              </svg>
-            </div>
+        {/* 2. The 8 Core Financial Metrics Grid (Sales, Receivables, Purchase, Payables, Receipt, Payment, Bank, Cash) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xs font-black uppercase tracking-wider text-[#6e7073] flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-[#f5ba41]" /> Financial Performance Overview ({dateRange.label})
+            </h3>
+            <span className="text-[11px] text-[#88898b] font-medium hidden sm:inline">
+              Real-time Tally Prime Aggregates
+            </span>
           </div>
-
-          {/* Card 2: Pending Review (Pastel Buttercup Gold) */}
-          <div className="p-4 sm:p-5 rounded-[28px] bg-[#fbe29d] text-[#4d3809] shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between text-[#4d3809]/80 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Pending Review</span>
-                <span className="p-1 rounded-full bg-[#e8cd84] text-[#4d3809]">
-                  <Clock className="h-3.5 w-3.5" />
-                </span>
-              </div>
-              <div className="text-lg sm:text-2xl font-black text-[#4d3809] font-mono mt-1">{pendingCount}</div>
-              <div className="text-[10px] sm:text-xs text-[#4d3809]/80 mt-1 font-bold">Maker-Checker Audit</div>
-            </div>
-
-            {/* Subtle Sparkline Wave */}
-            <div className="w-full h-5 pt-2">
-              <svg viewBox="0 0 100 20" className="w-full h-full stroke-[#9e7619] fill-none" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M0,12 Q30,18 60,8 T100,14" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Card 3: Approved Bills (Pastel Ice Slate) */}
-          <div className="p-4 sm:p-5 rounded-[28px] bg-[#dfe5ec] text-[#1e293b] shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between text-[#1e293b]/80 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Approved Bills</span>
-                <span className="p-1 rounded-full bg-[#cbd5e1] text-[#1e293b]">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                </span>
-              </div>
-              <div className="text-lg sm:text-2xl font-black text-[#1e293b] font-mono mt-1">{approvedCount}</div>
-              <div className="text-[10px] sm:text-xs text-[#1e293b]/80 mt-1 font-bold">Ready for Tally Sync</div>
-            </div>
-
-            {/* Subtle Sparkline Wave */}
-            <div className="w-full h-5 pt-2">
-              <svg viewBox="0 0 100 20" className="w-full h-full stroke-[#475569] fill-none" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M0,8 Q20,16 50,7 T100,10" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Card 4: NIC Compliance (Pastel Lavender Periwinkle) */}
-          <div className="p-4 sm:p-5 rounded-[28px] bg-[#deddfa] text-[#2c307a] shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between text-[#2c307a]/80 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">NIC Compliance</span>
-                <span className="p-1 rounded-full bg-[#c8c6f6] text-[#2c307a]">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                </span>
-              </div>
-              <div className="text-lg sm:text-2xl font-black text-[#2c307a] mt-1">1-Click IRN</div>
-              <div className="text-[10px] sm:text-xs text-[#2c307a]/80 mt-1 font-bold">AES-256-ECB Gateway</div>
-            </div>
-
-            {/* Subtle Sparkline Wave */}
-            <div className="w-full h-5 pt-2">
-              <svg viewBox="0 0 100 20" className="w-full h-full stroke-[#6b68df] fill-none" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M0,14 Q25,5 55,15 T100,8" />
-              </svg>
-            </div>
-          </div>
+          <MetricsGrid
+            vouchers={vouchers}
+            onSelectMetric={(id) => {
+              if (id === 'receivables' || id === 'payables' || id === 'bank' || id === 'cash') {
+                setActiveTab('reports');
+              } else {
+                setActiveTab('vouchers');
+              }
+            }}
+          />
         </div>
 
         {/* View Switcher: Daybook vs Reports */}
@@ -557,6 +629,26 @@ export default function Dashboard() {
           <ReportsView />
         )}
       </main>
+
+      {/* 3. Floating Action Button (+) for 1-Click Transaction Creation */}
+      <button
+        onClick={() => {
+          setCreateSheetInitialType(undefined);
+          setIsCreateSheetOpen(true);
+        }}
+        className="fixed bottom-20 md:bottom-8 right-6 z-40 h-14 w-14 rounded-full bg-[#232528] hover:bg-black text-[#f5ba41] flex items-center justify-center shadow-2xl transition transform hover:scale-105 active:scale-95 border-2 border-white/10 group"
+        title="Create Transaction (Alt + S / R / P / C / Q / J)"
+      >
+        <Plus className="h-7 w-7 transition group-hover:rotate-90 duration-200" />
+      </button>
+
+      {/* 4. Complete 11-Voucher Create Transaction Bottom Sheet */}
+      <CreateTransactionSheet
+        isOpen={isCreateSheetOpen}
+        onClose={() => setIsCreateSheetOpen(false)}
+        onSubmitVoucher={handleCreateTransaction}
+        initialType={createSheetInitialType}
+      />
 
       {/* Bottom Sheet on Mobile / Slide-Over on Desktop */}
       <VoucherDrawer
