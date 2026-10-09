@@ -22,15 +22,21 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+interface CustomerReminder {
+  name: string;
+  amount: number;
+  days: number;
+  phone: string;
+  invoice: string;
+  avatar?: string;
+}
+
 export default function ReportsView() {
   const [activeSubTab, setActiveSubTab] = useState<'aging' | 'pnl' | 'balance'>('aging');
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<{ name: string; amount: number; days: number; phone: string; invoice: string } | null>(null);
-  const [scheduleDate, setScheduleDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 3);
-    return d.toISOString().split('T')[0];
-  });
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerReminder | null>(null);
+  const [scheduleDate, setScheduleDate] = useState('2026-04-12');
+  const [scheduleTime, setScheduleTime] = useState('10:00');
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
 
@@ -41,18 +47,84 @@ export default function ReportsView() {
     { range: '90+ Days (Overdue)', amount: 48500, count: 2, bg: 'bg-[#F8D7DA] text-[#721C24]' }
   ];
 
-  const overdueCustomers = [
+  const overdueCustomers: CustomerReminder[] = [
     { name: 'Apex Logistics & Infra Ltd', amount: 48500, days: 94, phone: '+919876543210', invoice: 'INV/2026/089', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80' },
     { name: 'Shree Balaji Traders', amount: 52000, days: 68, phone: '+919812345678', invoice: 'INV/2026/102', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80' },
     { name: 'Mehta Chemical Works', amount: 43000, days: 62, phone: '+919723456789', invoice: 'INV/2026/108', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80' }
   ];
 
-  const handleSendReminder = (customer: typeof overdueCustomers[0]) => {
+  const getWhatsAppReminderUrl = (customer: CustomerReminder) => {
     const text = `Dear ${customer.name},\n\nThis is a gentle payment reminder from Livekeeping Enterprises regarding overdue invoice *${customer.invoice}* for the amount of *₹${customer.amount.toLocaleString('en-IN')}* (overdue by ${customer.days} days).\n\nKindly arrange payment via NEFT/UPI or reply if already cleared.\n\nThank you for your prompt cooperation!`;
-    window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    return `https://wa.me/${customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`;
   };
 
-  const handleSaveScheduledReminder = async (e: React.FormEvent) => {
+  const handleSendReminder = (customer: CustomerReminder) => {
+    window.open(getWhatsAppReminderUrl(customer), '_blank');
+  };
+
+  // 1-Click Google Calendar Event Generator
+  const handleAddToGoogleCalendar = (customer: CustomerReminder, dateStr: string, timeStr = '10:00') => {
+    const title = `💰 Payment Follow-up: ${customer.name} (₹${customer.amount.toLocaleString('en-IN')})`;
+    const waUrl = getWhatsAppReminderUrl(customer);
+    const details = `Overdue Payment Follow-up Reminder\n\n• Customer: ${customer.name}\n• Invoice: ${customer.invoice}\n• Amount Due: ₹${customer.amount.toLocaleString('en-IN')}\n• Overdue: ${customer.days} Days\n• Phone: ${customer.phone}\n\n👉 1-Tap to Send WhatsApp Reminder:\n${waUrl}\n\n(Scheduled via Livekeeping Open ERP)`;
+
+    const cleanDate = dateStr.replace(/-/g, '');
+    const [hours, mins] = timeStr.split(':');
+    const startHour = hours || '10';
+    const startMin = mins || '00';
+    const endHour = String((parseInt(startHour) + 1) % 24).padStart(2, '0');
+
+    const startDateTime = `${cleanDate}T${startHour}${startMin}00`;
+    const endDateTime = `${cleanDate}T${endHour}${startMin}00`;
+
+    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(details)}&add=${encodeURIComponent(customer.name)}`;
+    window.open(gcalUrl, '_blank');
+  };
+
+  // Download Standard Apple/Outlook iCal (.ics) Event
+  const handleDownloadIcs = (customer: CustomerReminder, dateStr: string, timeStr = '10:00') => {
+    const title = `💰 Payment Follow-up: ${customer.name} (₹${customer.amount.toLocaleString('en-IN')})`;
+    const waUrl = getWhatsAppReminderUrl(customer);
+    const details = `Overdue Payment Follow-up Reminder\\n\\nCustomer: ${customer.name}\\nInvoice: ${customer.invoice}\\nAmount Due: INR ${customer.amount}\\nDays Overdue: ${customer.days} Days\\n\\n1-Tap WhatsApp Link: ${waUrl}`;
+
+    const cleanDate = dateStr.replace(/-/g, '');
+    const [hours, mins] = timeStr.split(':');
+    const startHour = hours || '10';
+    const startMin = mins || '00';
+    const endHour = String((parseInt(startHour) + 1) % 24).padStart(2, '0');
+
+    const startDateTime = `${cleanDate}T${startHour}${startMin}00`;
+    const endDateTime = `${cleanDate}T${endHour}${startMin}00`;
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Livekeeping Open//Payment Reminder//EN',
+      'CALSCALE:GREGORIAN',
+      'BEGIN:VEVENT',
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${details}`,
+      `DTSTART:${startDateTime}`,
+      `DTEND:${endDateTime}`,
+      'BEGIN:VALARM',
+      'TRIGGER:-PT15M',
+      'ACTION:DISPLAY',
+      `DESCRIPTION:Follow-up payment with ${customer.name}`,
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `reminder-${customer.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSaveScheduledReminder = async (e: React.FormEvent, calendarOption?: 'google' | 'ics') => {
     e.preventDefault();
     if (!selectedCustomer || !scheduleDate) return;
 
@@ -73,6 +145,13 @@ export default function ReportsView() {
       const data = await res.json();
       if (res.ok && data.success) {
         setScheduleFeedback(`Payment reminder scheduled for ${selectedCustomer.name} on ${scheduleDate}!`);
+        
+        if (calendarOption === 'google') {
+          handleAddToGoogleCalendar(selectedCustomer, scheduleDate, scheduleTime);
+        } else if (calendarOption === 'ics') {
+          handleDownloadIcs(selectedCustomer, scheduleDate, scheduleTime);
+        }
+
         setIsScheduleModalOpen(false);
         confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
       } else {
@@ -329,37 +408,70 @@ export default function ReportsView() {
               </div>
             </div>
 
-            <form onSubmit={handleSaveScheduledReminder} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#232528] mb-1">Select Execution Date</label>
-                <input
-                  type="date"
-                  required
-                  min={new Date().toISOString().split('T')[0]}
-                  value={scheduleDate}
-                  onChange={(e) => setScheduleDate(e.target.value)}
-                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs font-bold text-[#232528] focus:ring-2 focus:ring-[#f5ba41]"
-                />
-                <span className="text-[11px] text-[#88898b] mt-1 block">
-                  The automated cron worker will dispatch a WhatsApp payment reminder on this date.
-                </span>
+            <form onSubmit={(e) => handleSaveScheduledReminder(e, 'google')} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#232528] mb-1">Follow-up Date</label>
+                  <input
+                    type="date"
+                    required
+                    min="2026-04-01"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    className="w-full bg-[#f6f5f0] border-none rounded-2xl px-3.5 py-2.5 text-xs font-bold text-[#232528] focus:ring-2 focus:ring-[#f5ba41]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#232528] mb-1">Alert Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    className="w-full bg-[#f6f5f0] border-none rounded-2xl px-3.5 py-2.5 text-xs font-bold text-[#232528] focus:ring-2 focus:ring-[#f5ba41]"
+                  />
+                </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#e5e3dc]">
-                <button
-                  type="button"
-                  onClick={() => setIsScheduleModalOpen(false)}
-                  className="min-h-[44px] px-5 py-2 text-xs font-bold text-[#88898b] bg-[#f6f5f0] rounded-full btn-pill"
-                >
-                  Cancel
-                </button>
+              <div className="p-3 bg-[#f0eee6] rounded-2xl text-[11px] text-[#555] space-y-1">
+                <div className="font-bold text-[#232528] flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-[#f5ba41]" /> Direct Calendar Sync
+                </div>
+                <div>
+                  Creates a calendar event with an integrated <strong>1-Tap WhatsApp link</strong> in the notes, alerting your phone/laptop on the scheduled date!
+                </div>
+              </div>
+
+              {/* Quick 1-Click Calendar Actions */}
+              <div className="space-y-2 pt-1">
                 <button
                   type="submit"
                   disabled={isScheduling}
-                  className="min-h-[44px] px-6 py-2 text-xs font-bold text-[#232528] bg-[#f5ba41] hover:bg-[#e6ab33] rounded-full btn-pill shadow-md shadow-[#f5ba41]/20 disabled:opacity-50"
+                  className="w-full min-h-[44px] py-2.5 px-4 bg-[#232528] hover:bg-black text-[#f5ba41] font-black rounded-2xl text-xs flex items-center justify-center gap-2 transition shadow-md disabled:opacity-50"
                 >
-                  {isScheduling ? 'Scheduling...' : 'Confirm Schedule'}
+                  <CalendarClock className="h-4 w-4 text-[#f5ba41]" />
+                  <span>{isScheduling ? 'Scheduling...' : 'Confirm & Add to Google Calendar'}</span>
                 </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => handleSaveScheduledReminder(e as any, 'ics')}
+                    disabled={isScheduling}
+                    className="min-h-[40px] py-2 px-3 bg-white hover:bg-[#edece6] border border-[#e5e3dc] text-[#232528] font-bold rounded-2xl text-[11px] flex items-center justify-center gap-1.5 transition"
+                  >
+                    <span>Apple / Outlook (.ics)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => handleSaveScheduledReminder(e as any)}
+                    disabled={isScheduling}
+                    className="min-h-[40px] py-2 px-3 bg-[#f6f5f0] hover:bg-[#edece6] text-[#666] font-bold rounded-2xl text-[11px] flex items-center justify-center transition"
+                  >
+                    <span>System Only</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
