@@ -48,7 +48,7 @@ const DEFAULT_COMPANIES: CompanyInfo[] = [
     id: 'org-101',
     name: 'LiveTech Pvt Ltd',
     gstin: '24AAACL9999P1Z2',
-    lastSyncedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(),
+    lastSyncedAt: '2026-03-12T10:00:00.000Z',
     syncStatus: 'stale',
     daysSinceLastSync: 28
   },
@@ -56,7 +56,7 @@ const DEFAULT_COMPANIES: CompanyInfo[] = [
     id: 'org-102',
     name: 'Apex Industries LLP',
     gstin: '27AABCA5555M1Z1',
-    lastSyncedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    lastSyncedAt: '2026-04-09T08:00:00.000Z',
     syncStatus: 'synced',
     daysSinceLastSync: 0
   },
@@ -64,7 +64,7 @@ const DEFAULT_COMPANIES: CompanyInfo[] = [
     id: 'org-103',
     name: 'Shree Balaji Traders',
     gstin: '07AAACA1234F1ZX',
-    lastSyncedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    lastSyncedAt: '2026-04-04T12:00:00.000Z',
     syncStatus: 'stale',
     daysSinceLastSync: 5
   }

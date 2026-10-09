@@ -24,7 +24,7 @@ export default function CashFlowForm({ voucherType, onSubmit, onCancel }: CashFl
   const [againstInvoiceRef, setAgainstInvoiceRef] = useState(SAMPLE_PENDING_INVOICES[0].no);
   const [paymentMode, setPaymentMode] = useState<'bank' | 'cash' | 'cheque' | 'upi'>('bank');
   const [instrumentNo, setInstrumentNo] = useState('UTR-99882201');
-  const [voucherDate, setVoucherDate] = useState(new Date().toISOString().split('T')[0]);
+  const [voucherDate, setVoucherDate] = useState('2026-04-09');
   const [bankLedger, setBankLedger] = useState('HDFC Bank Account - 9912');
   const [narration, setNarration] = useState(
     isReceipt

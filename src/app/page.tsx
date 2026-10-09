@@ -41,7 +41,7 @@ export default function Dashboard() {
     id: 'org-101',
     name: 'LiveTech Pvt Ltd',
     gstin: '24AAACL9999P1Z2',
-    lastSyncedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString(),
+    lastSyncedAt: '2026-03-12T10:00:00.000Z',
     syncStatus: 'stale',
     daysSinceLastSync: 28
   });

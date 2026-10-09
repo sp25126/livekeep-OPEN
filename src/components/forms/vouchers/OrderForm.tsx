@@ -18,9 +18,7 @@ export default function OrderForm({ voucherType, onSubmit, onCancel }: OrderForm
   const [orderNumber, setOrderNumber] = useState(
     `${isSales ? 'SO' : 'PO'}/2026-27/${Math.floor(100 + Math.random() * 900)}`
   );
-  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  );
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('2026-04-16');
   const [termsOfDelivery, setTermsOfDelivery] = useState('Door Delivery / CIF Destination');
 
   const [items, setItems] = useState<VoucherItem[]>([
