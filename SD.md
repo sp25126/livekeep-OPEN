@@ -21,7 +21,9 @@ graph TD
         APIEInvoice["NIC E-Invoice Gateway (/api/vouchers/[id]/generate-irn)"]
         APIPDF["Dynamic PDF Invoice Generator (/api/invoices/[id]/pdf)"]
         APIUsers["Admin RBAC Management API (/api/admin/users)"]
-        WhatsAppService["Meta WhatsApp Cloud API Client (src/lib/services/whatsapp.ts)"]
+        WhatsAppService["WhatsApp Dispatcher (Option A wa.me / Option B Cloud) (src/lib/services/whatsapp.ts)"]
+        TaxEngine["GST Tax Engine (Intra/Inter-state) (src/lib/billing/taxEngine.ts)"]
+        AuditService["Zero-Trust Audit Logger (src/lib/services/auditLogger.ts)"]
         CryptoService["AES-256-ECB NIC Crypto Client (src/lib/services/nic-gst/crypto.ts)"]
     end
 
@@ -218,9 +220,10 @@ FOR EACH ROW EXECUTE FUNCTION log_voucher_changes();
   ```json
   {
     "success": true,
-    "message": "Voucher approved successfully, WhatsApp notification dispatched, and queued for Tally sync.",
+    "message": "Voucher approved successfully, WhatsApp dispatch ready, and queued for Tally sync.",
     "voucherId": "mock-1",
-    "whatsappSent": true
+    "whatsappSent": true,
+    "directUrl": "https://wa.me/919876543210?text=..."
   }
   ```
 

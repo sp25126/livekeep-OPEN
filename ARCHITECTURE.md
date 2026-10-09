@@ -83,7 +83,7 @@ live-keeping_open/
 │   │   │
 │   │   └── services/
 │   │       ├── auditLogger.ts       # Zero-Trust security event logger (system_audit_logs)
-│   │       ├── whatsapp.ts          # Meta WhatsApp Cloud API HTTP client
+│   │       ├── whatsapp.ts          # 100% Free Option A wa.me direct dispatcher + Option B Meta fallback
 │   │       ├── offlineSync.ts       # LocalStorage/IndexedDB offline voucher mutation queue
 │   │       │
 │   │       └── nic-gst/             # Indian Government E-Invoice (IRN) Engine

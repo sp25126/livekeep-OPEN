@@ -56,10 +56,13 @@ Small and medium businesses (MSMEs) in India heavily rely on **Tally Prime / Tal
   - Automated authentication token caching (6-hour expiry).
   - Validation of mandatory GST INV-01 payload schema: `TranDtls`, `DocDtls`, `SellerDtls`, `BuyerDtls`, `ItemList`, `ValDtls`.
 
-### 3.4. WhatsApp Cloud API & Native PDF Generation
-- **Requirement:** Dispatch official tax invoice PDF and payment reminders to customer WhatsApp numbers without external SaaS dependencies.
+### 3.4. WhatsApp Invoicing (Option A: 100% Free Direct Protocol) & Native PDF Generation
+- **Requirement:** Dispatch official tax invoice PDF and payment reminders to customer WhatsApp numbers with zero SaaS fees, zero Meta verification friction, and zero external costs.
+- **Protocol:**
+  - Uses direct `wa.me` URL scheme with pre-populated invoice details, total amounts, GST breakdown, and PDF view link.
+  - Automatically launches WhatsApp Web or native mobile WhatsApp without requiring paid Meta API accounts or template approvals.
 - **Endpoints:**
-  - `POST /api/vouchers/approve` -> triggers Meta WhatsApp Cloud API template `payment_reminder_v1` or custom direct message.
+  - `POST /api/vouchers/approve` -> Generates pre-formatted 1-tap WhatsApp direct delivery payload (`directUrl`).
   - `GET /api/invoices/[id]/pdf` -> Dynamic serverless HTML-to-PDF rendering with QR code, HSN breakdown, CGST/SGST/IGST calculation, bank details, and terms.
 
 ### 3.5. Receivables & Aging Breakdown ("Money to Collect")
