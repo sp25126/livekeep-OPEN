@@ -122,35 +122,7 @@ export default function Navigation({
             />
           </div>
 
-          {/* Role Simulation Switcher Card */}
-          <div className="p-3.5 rounded-2xl bg-[#1b1c1e] border border-white/5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] font-bold text-[#8c8d8f] uppercase tracking-wider flex items-center gap-1">
-                <UserCheck className="h-3 w-3 text-[#f5ba41]" /> Role Preview
-              </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#f5ba41] text-[#232528]">
-                {currentRole}
-              </span>
-            </div>
 
-            {onRoleChange && (
-              <div className="grid grid-cols-4 gap-1 p-1 bg-[#232528] rounded-xl border border-white/5">
-                {(['maker', 'checker', 'manager', 'admin'] as UserRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => onRoleChange(r)}
-                    className={`py-1 rounded-lg text-[10px] font-bold capitalize transition ${
-                      currentRole === r
-                        ? 'bg-[#f5ba41] text-[#232528] shadow-sm font-black'
-                        : 'text-[#8c8d8f] hover:text-white'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Quick Create Voucher Button */}
           <div>

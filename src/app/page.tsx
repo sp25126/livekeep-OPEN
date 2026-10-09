@@ -31,7 +31,7 @@ import {
 
 export default function Dashboard() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [activeRole, setActiveRole] = useState<UserRole>('checker');
+  const [activeRole, setActiveRole] = useState<UserRole>('admin');
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('vouchers');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
