@@ -48,6 +48,11 @@ live-keeping_open/
 │   │   │   ├── admin/
 │   │   │   │   └── users/
 │   │   │   │       └── route.ts     # User CRUD & RBAC provisioning using Supabase Service Key
+│   │   │   ├── auth/
+│   │   │   │   ├── verify-pin/
+│   │   │   │   │   └── route.ts     # 6-Digit Master Security PIN SHA-256 validation & rate limiting
+│   │   │   │   └── update-pin/
+│   │   │   │       └── route.ts     # Admin Master PIN rotation & inactivity timeout update
 │   │   │   ├── invoices/
 │   │   │   │   └── [id]/
 │   │   │   │       └── pdf/
@@ -69,7 +74,12 @@ live-keeping_open/
 │   │   ├── VoucherList.tsx          # Responsive Daybook (Desktop multi-column + Mobile card stack)
 │   │   ├── VoucherDrawer.tsx        # Slide-over invoice drawer on desktop / Bottom sheet on mobile
 │   │   ├── ReportsView.tsx          # Receivables Aging ("Money to Collect"), P&L and Balance Sheet
+│   │   ├── SecurityPinModal.tsx     # Full-screen touch Numpad Master PIN lock overlay
+│   │   ├── SecurityLayoutWrapper.tsx# Client wrapper enforcing DOM blur and Zero-Trust session lock
 │   │   └── PWAProvider.tsx          # Service worker registration and online/offline sync listener
+│   │
+│   ├── context/
+│   │   └── SecurityContext.tsx      # Global security state provider (inactivity timer, lock/unlock)
 │   │
 │   ├── data/
 │   │   └── sample_invoices.json     # Comprehensive seed dataset of B2B GST invoices & ledgers

@@ -12,12 +12,15 @@ export type SecurityAction =
   | 'VOUCHER_PDF_ACCESSED'
   | 'IRN_GENERATED'
   | 'TALLY_SYNC_ATTEMPTED'
-  | 'TALLY_SYNC_FAILED';
+  | 'TALLY_SYNC_FAILED'
+  | 'PIN_AUTH_FAILED'
+  | 'PIN_AUTH_SUCCESS'
+  | 'MASTER_PIN_UPDATED';
 
 export interface SecurityEventPayload {
   userId?: string | null;
   action: SecurityAction | string;
-  entityName: 'vouchers' | 'profiles' | 'auth' | 'nic_compliance' | 'tally_bridge';
+  entityName: 'vouchers' | 'profiles' | 'auth' | 'nic_compliance' | 'tally_bridge' | 'system_security' | 'security_lock' | string;
   entityId?: string | null;
   ipAddress?: string | null;
   metadata?: Record<string, any>;

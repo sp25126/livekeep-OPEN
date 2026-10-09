@@ -15,8 +15,10 @@ import {
   ChevronRight,
   Box,
   Layers,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
+import { useSecurity } from '@/context/SecurityContext';
 
 interface NavigationProps {
   currentRole: UserRole;
@@ -38,6 +40,7 @@ export default function Navigation({
   onTabChange
 }: NavigationProps) {
   const pathname = usePathname();
+  const { lockApp } = useSecurity();
 
   const navItems = [
     {
@@ -239,6 +242,15 @@ export default function Navigation({
             <MapPin className="h-3.5 w-3.5 text-[#f5ba41]" />
             <span>Field Staff Check-in</span>
           </button>
+
+          <button
+            onClick={() => lockApp()}
+            className="w-full min-h-[40px] py-2 px-3 bg-white/5 hover:bg-rose-950/40 text-[#c9c8c5] hover:text-rose-300 font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition border border-white/5"
+            title="Lock terminal with Master PIN"
+          >
+            <Lock className="h-3.5 w-3.5 text-[#f5ba41]" />
+            <span>Lock App (PIN)</span>
+          </button>
         </div>
       </aside>
 
@@ -257,6 +269,14 @@ export default function Navigation({
         </div>
 
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => lockApp()}
+            className="h-8 px-2.5 bg-white/10 hover:bg-rose-900/40 text-white rounded-xl text-xs flex items-center justify-center"
+            title="Lock terminal"
+          >
+            <Lock className="h-3.5 w-3.5 text-[#f5ba41]" />
+          </button>
+
           <button
             onClick={onOpenNewVoucher}
             className="h-8 px-3 bg-[#f5ba41] text-[#232528] font-black rounded-xl text-xs flex items-center space-x-1"

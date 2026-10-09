@@ -137,6 +137,15 @@ CREATE TABLE public.system_audit_logs (
     new_data JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 5. System Master Security (6-Digit PIN Lock & Inactivity)
+CREATE TABLE public.system_security (
+    id INT PRIMARY KEY DEFAULT 1,
+    pin_hash TEXT NOT NULL,
+    auto_lock_minutes INT DEFAULT 3,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT single_row CHECK (id = 1)
+);
 ```
 
 ### 2.3. Row Level Security (RLS) & Automated Audit Triggers
@@ -250,6 +259,16 @@ FOR EACH ROW EXECUTE FUNCTION log_voucher_changes();
 - **`POST /api/admin/users`**: Creates new user via `supabaseAdmin.auth.admin.createUser` and creates record in `public.profiles`.
 - **`PATCH /api/admin/users`**: Updates user role or resets password.
 - **`DELETE /api/admin/users`**: Deletes auth account and cascades profile removal.
+
+### 3.5. Master Security PIN & Inactivity Auto-Lock API
+- **`POST /api/auth/verify-pin`**:
+  - Request: `{ "pin": "123456" }`
+  - Validates 6-digit PIN against SHA-256 hash in `system_security`.
+  - Rate limiting: max 5 failed attempts per 15 minutes.
+  - Returns `{ "success": true, "token": "signed_token", "autoLockMinutes": 3 }` or HTTP 401.
+- **`POST /api/auth/update-pin`**:
+  - Request: `{ "currentPin": "123456", "newPin": "987654", "autoLockMinutes": 5 }`
+  - Validates current PIN and updates master hash and timeout in database.
 
 ---
 

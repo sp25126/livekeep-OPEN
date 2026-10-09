@@ -46,6 +46,53 @@ export default function UserManagementPage() {
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Master PIN Security State
+  const [currentMasterPin, setCurrentMasterPin] = useState<string>('');
+  const [newMasterPin, setNewMasterPin] = useState<string>('');
+  const [autoLockMinutes, setAutoLockMinutes] = useState<number>(3);
+  const [pinUpdateLoading, setPinUpdateLoading] = useState<boolean>(false);
+  const [pinFeedback, setPinFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleUpdateMasterPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentMasterPin || !newMasterPin) return;
+
+    if (!/^\d{6}$/.test(newMasterPin)) {
+      setPinFeedback({ type: 'error', text: 'New PIN must be exactly 6 numeric digits.' });
+      return;
+    }
+
+    setPinUpdateLoading(true);
+    setPinFeedback(null);
+
+    try {
+      const res = await fetch('/api/auth/update-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPin: currentMasterPin,
+          newPin: newMasterPin,
+          autoLockMinutes
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPinFeedback({ type: 'success', text: 'Master Security PIN & Auto-Lock timeout updated successfully!' });
+        setCurrentMasterPin('');
+        setNewMasterPin('');
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
+      } else {
+        setPinFeedback({ type: 'error', text: data.error || 'Failed to update PIN.' });
+      }
+    } catch (err: any) {
+      setPinFeedback({ type: 'error', text: err.message || 'Network exception.' });
+    } finally {
+      setPinUpdateLoading(false);
+      setTimeout(() => setPinFeedback(null), 6000);
+    }
+  };
+
   // Fetch users from API
   const fetchUsers = async () => {
     setLoading(true);
@@ -359,6 +406,95 @@ export default function UserManagementPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Master Security PIN & Inactivity Lock Card */}
+        <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e5e3dc] pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-2xl bg-[#232528] text-[#f5ba41]">
+                <Lock className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-[#232528] tracking-tight">
+                  Master Security PIN & Inactivity Lock
+                </h3>
+                <p className="text-xs text-[#88898b]">
+                  Zero-Trust PIN protection that automatically locks the web app when inactive.
+                </p>
+              </div>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f6f5f0] text-xs font-mono font-bold text-[#232528]">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> AES-256 / SHA-256 Protected
+            </div>
+          </div>
+
+          {pinFeedback && (
+            <div className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+              pinFeedback.type === 'success' ? 'bg-[#D2DEC9] text-[#2b3e24]' : 'bg-[#F8D7DA] text-[#721C24]'
+            }`}>
+              {pinFeedback.type === 'success' ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#2b3e24]" />
+              ) : (
+                <AlertCircle className="h-4 w-4 shrink-0 text-[#721C24]" />
+              )}
+              <span>{pinFeedback.text}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleUpdateMasterPin} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+            <div>
+              <label className="block text-xs font-bold text-[#232528] mb-1">Current Master PIN</label>
+              <input
+                type="password"
+                maxLength={6}
+                required
+                value={currentMasterPin}
+                onChange={(e) => setCurrentMasterPin(e.target.value.replace(/\D/g, ''))}
+                placeholder="6 digits (default: 123456)"
+                className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-2.5 text-xs font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#232528] mb-1">New 6-Digit PIN</label>
+              <input
+                type="password"
+                maxLength={6}
+                required
+                value={newMasterPin}
+                onChange={(e) => setNewMasterPin(e.target.value.replace(/\D/g, ''))}
+                placeholder="e.g. 987654"
+                className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-2.5 text-xs font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#232528] mb-1">Auto-Lock Inactivity Timeout</label>
+              <select
+                value={autoLockMinutes}
+                onChange={(e) => setAutoLockMinutes(Number(e.target.value))}
+                className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-2.5 text-xs font-bold text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+              >
+                <option value={1}>1 Minute (Strict Banking)</option>
+                <option value={3}>3 Minutes (Default ERP)</option>
+                <option value={5}>5 Minutes</option>
+                <option value={10}>10 Minutes</option>
+                <option value={15}>15 Minutes</option>
+              </select>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={pinUpdateLoading}
+                className="w-full min-h-[42px] px-5 py-2.5 bg-[#232528] hover:bg-[#1a1b1d] text-white text-xs font-black rounded-2xl transition shadow-md disabled:opacity-50 flex items-center justify-center gap-2 btn-pill"
+              >
+                {pinUpdateLoading ? 'Updating PIN...' : 'Update Security PIN'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 

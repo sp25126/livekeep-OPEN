@@ -97,6 +97,13 @@ Small and medium businesses (MSMEs) in India heavily rely on **Tally Prime / Tal
   - Inter-State (`sellerStateCode !== buyerStateCode`): 100% applied to IGST, CGST = 0, SGST = 0.
   - Automatic precision rounding to 2 decimal places.
 
+### 3.11. Master Security PIN Lock & Session Inactivity Auto-Lock
+- **Requirement:** Full-screen 6-digit Master PIN lock screen overlay (`SecurityPinModal.tsx`) with SHA-256 server-side hash verification (`/api/auth/verify-pin`).
+- **Inactivity Protection:** Automatically locks the application after configurable inactivity timeout (default 3 minutes) via global `SecurityContext.tsx`.
+- **Anti-Leak DOM Obfuscation:** Background DOM elements containing confidential financial ledgers, voucher balances, and customer accounts are completely blurred, hidden (`opacity-0`, `invisible`, `max-h-0`), and pointer events disabled while locked.
+- **Brute-Force Rate Limiting:** Enforces maximum 5 failed attempts per 15-minute window with automated security event audit logging (`PIN_AUTH_FAILED`, `PIN_AUTH_SUCCESS`).
+- **Admin Governance:** Admins can change the Master PIN and configure inactivity timeout (1, 3, 5, 10, 15 min) in `/dashboard/users`.
+
 ---
 
 ## 4. Non-Functional & Design Requirements

@@ -165,3 +165,26 @@ DROP TRIGGER IF EXISTS audit_vouchers_trigger ON public.vouchers;
 CREATE TRIGGER audit_vouchers_trigger
 AFTER INSERT OR UPDATE OR DELETE ON public.vouchers
 FOR EACH ROW EXECUTE FUNCTION log_voucher_changes();
+
+-- 11. SYSTEM MASTER SECURITY (6-DIGIT PIN LOCK & INACTIVITY)
+CREATE TABLE IF NOT EXISTS public.system_security (
+    id INT PRIMARY KEY DEFAULT 1,
+    pin_hash TEXT NOT NULL,
+    auto_lock_minutes INT DEFAULT 3,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT single_row CHECK (id = 1)
+);
+
+ALTER TABLE public.system_security ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins manage security" ON public.system_security;
+CREATE POLICY "Admins manage security" ON public.system_security
+    FOR ALL USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    );
+
+-- Seed default master PIN: '123456' (SHA-256 hash)
+INSERT INTO public.system_security (id, pin_hash, auto_lock_minutes)
+VALUES (1, '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 3)
+ON CONFLICT (id) DO NOTHING;
+
