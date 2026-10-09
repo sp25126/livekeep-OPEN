@@ -19,8 +19,6 @@ export default function SecurityPinModal() {
     }
   }, [isLocked]);
 
-  if (!isLocked) return null;
-
   // Auto-submit on typing 6th digit
   const handleDigitPress = (digit: string) => {
     if (isLoading || isLockedOut) return;
@@ -83,6 +81,8 @@ export default function SecurityPinModal() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isLocked, pin, isLoading, isLockedOut]);
+
+  if (!isLocked) return null;
 
   return (
     <div
