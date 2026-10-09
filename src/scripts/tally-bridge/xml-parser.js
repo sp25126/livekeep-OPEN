@@ -17,10 +17,10 @@ const { create } = require('xmlbuilder2');
  * - Delivery Challan (delivery_challan)
  * 
  * @param {Object} voucher - Supabase voucher record
- * @param {string} [companyName='LiveTech Pvt Ltd'] - Active company in Tally
+ * @param {string} [companyName='Company'] - Active company in Tally
  * @returns {string} XML string formatted for Tally Prime
  */
-function jsonToTallyXML(voucher, companyName = 'LiveTech Pvt Ltd') {
+function jsonToTallyXML(voucher, companyName = 'Company') {
   const dateObj = voucher.created_at || voucher.voucher_date ? new Date(voucher.created_at || voucher.voucher_date) : new Date();
   const dateStr = dateObj.toISOString().slice(0, 10).replace(/-/g, '');
 
@@ -28,13 +28,13 @@ function jsonToTallyXML(voucher, companyName = 'LiveTech Pvt Ltd') {
   const taxAmount = parseFloat(voucher.tax_amount || 0);
   const subtotal = Math.max(0, totalAmount - taxAmount);
 
-  const partyName = voucher.party_name || 'Cash in Hand';
+  const partyName = voucher.party_name || 'Cash';
   const partyGstin = voucher.party_gstin || '';
   const voucherNum = voucher.voucher_number || `VCH-${Date.now()}`;
   const vchTypeRaw = voucher.voucher_type || 'sales_bill';
 
-  const fromAccount = voucher.from_account || 'HDFC Bank Account';
-  const toAccount = voucher.to_account || 'Cash in Hand';
+  const fromAccount = voucher.from_account || 'Bank Account';
+  const toAccount = voucher.to_account || 'Cash Account';
   const placeOfSupply = voucher.place_of_supply || '24-Gujarat';
   const isInterState = placeOfSupply.startsWith('24') === false && partyGstin && !partyGstin.startsWith('24');
 

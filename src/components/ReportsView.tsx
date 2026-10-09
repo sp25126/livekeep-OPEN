@@ -152,7 +152,7 @@ export default function ReportsView() {
   const totalAssets = sundryDebtors + bankAndCashBalance;
 
   const getWhatsAppReminderUrl = (customer: CustomerReminder) => {
-    const text = `Dear ${customer.name},\n\nThis is a gentle payment reminder from Livekeeping Enterprises regarding overdue invoice *${customer.invoice}* for the amount of *₹${customer.amount.toLocaleString('en-IN')}* (overdue by ${customer.days} days).\n\nKindly arrange payment via NEFT/UPI or reply if already cleared.\n\nThank you for your prompt cooperation!`;
+    const text = `Dear ${customer.name},\n\nThis is a gentle payment reminder regarding overdue invoice *${customer.invoice}* for the amount of *₹${customer.amount.toLocaleString('en-IN')}* (overdue by ${customer.days} days).\n\nKindly arrange payment via NEFT/UPI or reply if already cleared.\n\nThank you for your prompt cooperation!`;
     return `https://wa.me/${customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`;
   };
 

@@ -30,6 +30,8 @@ interface VoucherDrawerProps {
   generatingIrnId: string | null;
   onEdit?: (voucher: Voucher) => void;
   onDelete?: (id: string) => void;
+  companyName?: string;
+  companyGstin?: string;
 }
 
 export default function VoucherDrawer({
@@ -40,12 +42,15 @@ export default function VoucherDrawer({
   onGenerateIrn,
   generatingIrnId,
   onEdit,
-  onDelete
+  onDelete,
+  companyName,
+  companyGstin
 }: VoucherDrawerProps) {
   if (!voucher) return null;
 
   const handleWhatsAppShare = () => {
-    const message = `*Tax Invoice: ${voucher.voucher_number}*\n\nDear *${voucher.party_name}*,\nYour invoice for *₹${voucher.total_amount.toLocaleString('en-IN')}* is generated.\n\n*Billing Summary:*\n• Subtotal: ₹${((voucher.total_amount) - (voucher.tax_amount || 0)).toLocaleString('en-IN')}\n• GST (18%): ₹${(voucher.tax_amount || 0).toLocaleString('en-IN')}\n• Total Payable: ₹${voucher.total_amount.toLocaleString('en-IN')}\n\n*Compliance Details:*\n• GSTIN: ${voucher.party_gstin || '24AAACL9999P1Z2'}\n• IRN: ${voucher.irn_number ? `${voucher.irn_number.substring(0, 16)}...` : 'Pending Verification'}\n\nThank you for choosing Livekeeping Enterprises!`;
+    const businessName = companyName || 'our business';
+    const message = `*Tax Invoice: ${voucher.voucher_number}*\n\nDear *${voucher.party_name}*,\nYour invoice for *₹${voucher.total_amount.toLocaleString('en-IN')}* is generated.\n\n*Billing Summary:*\n• Subtotal: ₹${((voucher.total_amount) - (voucher.tax_amount || 0)).toLocaleString('en-IN')}\n• GST: ₹${(voucher.tax_amount || 0).toLocaleString('en-IN')}\n• Total Payable: ₹${voucher.total_amount.toLocaleString('en-IN')}\n\n*Compliance Details:*\n• GSTIN: ${voucher.party_gstin || 'Unregistered'}\n• IRN: ${voucher.irn_number ? `${voucher.irn_number.substring(0, 16)}...` : 'Pending Verification'}\n\nThank you for choosing ${businessName}!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -101,15 +106,21 @@ export default function VoucherDrawer({
             <div>
               <div className="text-[10px] font-bold uppercase text-[#88898b]">Billed To (Customer)</div>
               <div className="font-extrabold text-sm text-[#232528] mt-1">{voucher.party_name}</div>
-              <div className="text-[#88898b] font-mono mt-0.5">GSTIN: {voucher.party_gstin || '24AAACA12341ZV'}</div>
-              <div className="text-[#88898b] mt-1">Place of Supply: Gujarat (24)</div>
+              <div className="text-[#88898b] font-mono mt-0.5">GSTIN: {voucher.party_gstin || 'Unregistered / N/A'}</div>
+              <div className="text-[#88898b] mt-1">Place of Supply: {voucher.place_of_supply || 'N/A'}</div>
             </div>
 
             <div>
               <div className="text-[10px] font-bold uppercase text-[#88898b]">Billed From (Seller)</div>
-              <div className="font-extrabold text-sm text-[#232528] mt-1">Livekeeping Enterprises</div>
-              <div className="text-[#88898b] font-mono mt-0.5">GSTIN: 24AAACL9999P1Z2</div>
-              <div className="text-[#88898b] mt-1">Ahmedabad, Gujarat</div>
+              <div className="font-extrabold text-sm text-[#232528] mt-1">
+                {companyName || 'Tally Company Not Linked'}
+              </div>
+              <div className="text-[#88898b] font-mono mt-0.5">
+                GSTIN: {companyGstin || 'Connect Tally to view'}
+              </div>
+              <div className="text-[#88898b] mt-1">
+                {companyName ? 'Synced via Tally XML Bridge' : 'Connect Tally First'}
+              </div>
             </div>
           </div>
 
@@ -120,15 +131,33 @@ export default function VoucherDrawer({
               <span>Amount (₹)</span>
             </div>
             <div className="divide-y divide-[#efeee9] text-xs p-3">
-              <div className="p-2 flex justify-between items-center">
-                <div>
-                  <div className="font-bold text-[#232528]">Enterprise Industrial Valves (Grade A)</div>
-                  <div className="text-[11px] text-[#88898b]">HSN: 84818030 | Qty: 10 Nos @ ₹{(voucher.total_amount * 0.85 / 10).toLocaleString('en-IN')}</div>
+              {voucher.items && voucher.items.length > 0 ? (
+                voucher.items.map((item, idx) => (
+                  <div key={idx} className="p-2 flex justify-between items-center">
+                    <div>
+                      <div className="font-bold text-[#232528]">{item.item_name}</div>
+                      <div className="text-[11px] text-[#88898b]">
+                        HSN: {item.hsn_code || 'N/A'} | Qty: {item.quantity} Nos @ ₹{item.unit_price.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                    <div className="font-black text-[#232528] font-mono">
+                      ₹{item.total_item_amount.toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-2 flex justify-between items-center">
+                  <div>
+                    <div className="font-bold text-[#232528]">
+                      {voucher.narration || `${voucher.voucher_type.replace('_', ' ').toUpperCase()} Entry`}
+                    </div>
+                    <div className="text-[11px] text-[#88898b]">Ledger / Account: {voucher.party_name}</div>
+                  </div>
+                  <div className="font-black text-[#232528] font-mono">
+                    ₹{(voucher.total_amount - (voucher.tax_amount || 0)).toLocaleString('en-IN')}
+                  </div>
                 </div>
-                <div className="font-black text-[#232528] font-mono">
-                  ₹{(voucher.total_amount - (voucher.tax_amount || 0)).toLocaleString('en-IN')}
-                </div>
-              </div>
+              )}
             </div>
           </div>
 

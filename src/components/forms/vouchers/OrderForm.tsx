@@ -18,20 +18,20 @@ export default function OrderForm({ voucherType, onSubmit, onCancel }: OrderForm
   const [orderNumber, setOrderNumber] = useState(
     `${isSales ? 'SO' : 'PO'}/2026-27/${Math.floor(100 + Math.random() * 900)}`
   );
-  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('2026-04-16');
-  const [termsOfDelivery, setTermsOfDelivery] = useState('Door Delivery / CIF Destination');
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(() => new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]);
+  const [termsOfDelivery, setTermsOfDelivery] = useState('');
 
   const [items, setItems] = useState<VoucherItem[]>([
     {
-      item_name: 'Industrial Valve 2-inch SS304',
-      hsn_code: '84818030',
-      quantity: 10,
-      unit_price: 2500,
+      item_name: '',
+      hsn_code: '',
+      quantity: 1,
+      unit_price: 0,
       tax_rate: 18,
-      cgst_amount: 2250,
-      sgst_amount: 2250,
+      cgst_amount: 0,
+      sgst_amount: 0,
       igst_amount: 0,
-      total_item_amount: 29500
+      total_item_amount: 0
     }
   ]);
 

@@ -27,6 +27,9 @@ interface NavigationProps {
   currentRole: UserRole;
   onRoleChange?: (role: UserRole) => void;
   isConnected: boolean;
+  companyName?: string;
+  companyGstin?: string;
+  onConnectTally?: () => void;
   onOpenNewVoucher: () => void;
   onOpenGpsModal: () => void;
   activeTab?: string;
@@ -37,6 +40,9 @@ export default function Navigation({
   currentRole,
   onRoleChange,
   isConnected,
+  companyName,
+  companyGstin,
+  onConnectTally,
   onOpenNewVoucher,
   onOpenGpsModal,
   activeTab = 'vouchers',
@@ -116,21 +122,29 @@ export default function Navigation({
           </div>
 
           {/* Active Company Badge */}
-          <div className="p-3 rounded-2xl bg-[#1b1c1e] border border-white/5 flex items-center justify-between text-xs">
+          <button 
+            type="button"
+            onClick={onConnectTally}
+            className="w-full text-left p-3 rounded-2xl bg-[#1b1c1e] border border-white/5 hover:border-[#f5ba41]/30 transition flex items-center justify-between text-xs group"
+          >
             <div className="flex items-center space-x-2.5 truncate">
-              <div className="p-1.5 rounded-xl bg-white/5 text-[#c9c8c5]">
+              <div className="p-1.5 rounded-xl bg-white/5 text-[#c9c8c5] group-hover:text-[#f5ba41] transition">
                 <Building2 className="h-4 w-4" />
               </div>
               <div className="truncate">
-                <div className="font-bold text-white text-[11px] truncate">Livekeeping Enterprises</div>
-                <div className="text-[10px] text-[#8c8d8f] font-mono">24AAACL9999P1Z2</div>
+                <div className="font-bold text-white text-[11px] truncate">
+                  {companyName || (isConnected ? 'Tally Connected' : 'Tally Not Connected')}
+                </div>
+                <div className="text-[10px] text-[#8c8d8f] font-mono group-hover:text-[#f5ba41] transition">
+                  {companyGstin || (isConnected ? 'Syncing Records...' : 'Connect Tally First')}
+                </div>
               </div>
             </div>
             <span
-              className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-emerald-400 ring-2 ring-emerald-400/20 animate-pulse' : 'bg-amber-400'}`}
-              title={isConnected ? 'Real-Time Sync Active' : 'Offline Mode'}
+              className={`h-2.5 w-2.5 rounded-full shrink-0 ${isConnected ? 'bg-emerald-400 ring-2 ring-emerald-400/20 animate-pulse' : 'bg-amber-400'}`}
+              title={isConnected ? 'Real-Time Sync Active' : 'Tally Not Connected'}
             />
-          </div>
+          </button>
 
 
 
@@ -265,7 +279,9 @@ export default function Navigation({
             <div className="font-black text-sm text-white flex items-center gap-1">
               Livekeep <span className="text-[#f5ba41] text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/5">PRO</span>
             </div>
-            <div className="text-[10px] text-[#8c8d8f]">Livekeeping Enterprises</div>
+            <div className="text-[10px] text-[#8c8d8f]">
+              {companyName || (isConnected ? 'Tally Connected' : 'Connect Tally First')}
+            </div>
           </div>
         </div>
 

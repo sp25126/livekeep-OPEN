@@ -15,6 +15,8 @@ import ReportsView from '@/components/ReportsView';
 import DashboardHeader, { DateRange, CompanyInfo } from '@/components/DashboardHeader';
 import MetricsGrid from '@/components/MetricsGrid';
 import CreateTransactionSheet from '@/components/CreateTransactionSheet';
+import TallyConnectModal from '@/components/TallyConnectModal';
+import { useTallyConnection } from '@/hooks/useTallyConnection';
 
 import { 
   TrendingUp, 
@@ -24,28 +26,34 @@ import {
   Plus, 
   MapPin, 
   RefreshCw, 
-  Sparkles,
-  Edit3
+  Sparkles, 
+  Edit3,
+  Laptop
 } from 'lucide-react';
 
 export default function Dashboard() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeRole, setActiveRole] = useState<UserRole>('admin');
-  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('vouchers');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
-  
-  // Financial Date Range & Company State
-  const [currentCompany, setCurrentCompany] = useState<CompanyInfo>({
-    id: 'org-101',
-    name: 'LiveTech Pvt Ltd',
-    gstin: '24AAACL9999P1Z2',
-    lastSyncedAt: '2026-03-12T10:00:00.000Z',
-    syncStatus: 'stale',
-    daysSinceLastSync: 28
-  });
+  const [isTallyModalOpen, setIsTallyModalOpen] = useState<boolean>(false);
 
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(false);
+
+  // Dynamic Tally Connection & Synced Ledgers/Companies
+  const {
+    isTallyConnected,
+    syncedAccounts,
+    companies,
+    currentCompany,
+    setCurrentCompany,
+    checkConnection
+  } = useTallyConnection();
+
+  const isConnected = isTallyConnected || isRealtimeConnected;
+  
+  // Financial Date Range
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: '2024-04-01',
     endDate: '2025-03-31',
@@ -67,11 +75,11 @@ export default function Dashboard() {
 
   // New Voucher Form State
   const [partyName, setPartyName] = useState('');
-  const [partyGstin, setPartyGstin] = useState('24AAACA12341ZV');
+  const [partyGstin, setPartyGstin] = useState('');
   const [amount, setAmount] = useState('');
   const [voucherType, setVoucherType] = useState<VoucherType>('sales_bill');
-  const [fromAccount, setFromAccount] = useState('HDFC Bank Account');
-  const [toAccount, setToAccount] = useState('Cash in Hand');
+  const [fromAccount, setFromAccount] = useState('');
+  const [toAccount, setToAccount] = useState('');
   const [paymentMode, setPaymentMode] = useState<'bank' | 'cash' | 'cheque' | 'upi'>('bank');
   const [instrumentNo, setInstrumentNo] = useState('');
 
@@ -81,8 +89,8 @@ export default function Dashboard() {
   const [editPartyGstin, setEditPartyGstin] = useState('');
   const [editAmount, setEditAmount] = useState('');
   const [editVoucherType, setEditVoucherType] = useState<VoucherType>('sales_bill');
-  const [editFromAccount, setEditFromAccount] = useState('HDFC Bank Account');
-  const [editToAccount, setEditToAccount] = useState('Cash in Hand');
+  const [editFromAccount, setEditFromAccount] = useState('');
+  const [editToAccount, setEditToAccount] = useState('');
   const [editPaymentMode, setEditPaymentMode] = useState<'bank' | 'cash' | 'cheque' | 'upi'>('bank');
   const [editInstrumentNo, setEditInstrumentNo] = useState('');
 
@@ -163,7 +171,7 @@ export default function Dashboard() {
         }
       )
       .subscribe((status) => {
-        setIsConnected(status === 'SUBSCRIBED');
+        setIsRealtimeConnected(status === 'SUBSCRIBED');
       });
 
     return () => {
@@ -366,12 +374,12 @@ export default function Dashboard() {
   const handleOpenEditModal = (voucher: Voucher) => {
     setEditingVoucher(voucher);
     setEditPartyName(voucher.party_name);
-    setEditPartyGstin(voucher.party_gstin || '24AAACA12341ZV');
+    setEditPartyGstin(voucher.party_gstin || '');
     const taxableAmount = voucher.total_amount - (voucher.tax_amount || 0);
     setEditAmount(String(Math.round(taxableAmount > 0 ? taxableAmount : voucher.total_amount)));
     setEditVoucherType(voucher.voucher_type);
-    setEditFromAccount(voucher.from_account || 'HDFC Bank Account');
-    setEditToAccount(voucher.to_account || 'Cash in Hand');
+    setEditFromAccount(voucher.from_account || '');
+    setEditToAccount(voucher.to_account || '');
     setEditPaymentMode(voucher.payment_mode || 'bank');
     setEditInstrumentNo(voucher.instrument_number || '');
     setIsEditModalOpen(true);
@@ -498,12 +506,14 @@ export default function Dashboard() {
     setIsSyncing(true);
     try {
       await new Promise((r) => setTimeout(r, 1000));
-      setCurrentCompany((prev) => ({
-        ...prev,
-        lastSyncedAt: new Date().toISOString(),
-        daysSinceLastSync: 0,
-        syncStatus: 'synced'
-      }));
+      if (currentCompany) {
+        setCurrentCompany({
+          ...currentCompany,
+          lastSyncedAt: new Date().toISOString(),
+          daysSinceLastSync: 0,
+          syncStatus: 'synced'
+        });
+      }
       confetti({
         particleCount: 50,
         spread: 60,
@@ -519,7 +529,7 @@ export default function Dashboard() {
     const nextNum = voucherData.voucher_number || `VCH/2026-27/${String(vouchers.length + 1).padStart(3, '0')}`;
     const newVch: Voucher = {
       id: `v-${Date.now()}`,
-      organization_id: currentCompany.id || 'org-101',
+      organization_id: currentCompany?.id || 'tally-default',
       voucher_number: nextNum,
       voucher_type: voucherData.voucher_type || 'sales_bill',
       party_name: voucherData.party_name || 'Cash Account',
@@ -569,6 +579,9 @@ export default function Dashboard() {
         currentRole={activeRole}
         onRoleChange={setActiveRole}
         isConnected={isConnected}
+        companyName={currentCompany?.name}
+        companyGstin={currentCompany?.gstin}
+        onConnectTally={() => setIsTallyModalOpen(true)}
         onOpenNewVoucher={() => {
           setCreateSheetInitialType(undefined);
           setIsCreateSheetOpen(true);
@@ -584,10 +597,12 @@ export default function Dashboard() {
         {/* 1. Dashboard Header (Company Switcher, Sync Warning Banner, Date Range Selector) */}
         <DashboardHeader
           currentCompany={currentCompany}
+          companies={companies}
           onCompanyChange={(comp) => setCurrentCompany(comp)}
           dateRange={dateRange}
           onDateRangeChange={(range) => setDateRange(range)}
           onTriggerSync={handleTriggerSync}
+          onConnectTallyClick={() => setIsTallyModalOpen(true)}
           isSyncing={isSyncing}
         />
 
@@ -662,6 +677,8 @@ export default function Dashboard() {
         generatingIrnId={generatingIrnId}
         onEdit={handleOpenEditModal}
         onDelete={handleDeleteVoucher}
+        companyName={currentCompany?.name}
+        companyGstin={currentCompany?.gstin}
       />
 
       {/* Edit Voucher Modal */}
@@ -699,31 +716,53 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-[#232528] mb-1">From Account (Source)</label>
-                    <select
-                      value={editFromAccount}
-                      onChange={(e) => setEditFromAccount(e.target.value)}
-                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
-                    >
-                      <option value="HDFC Bank Account">HDFC Bank Account</option>
-                      <option value="SBI Current Account">SBI Current Account</option>
-                      <option value="ICICI Bank Account">ICICI Bank Account</option>
-                      <option value="Cash in Hand">Cash in Hand</option>
-                      <option value="Petty Cash">Petty Cash</option>
-                    </select>
+                    {syncedAccounts.length > 0 ? (
+                      <select
+                        value={editFromAccount}
+                        onChange={(e) => setEditFromAccount(e.target.value)}
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      >
+                        <option value="" disabled>Select Source Account</option>
+                        {syncedAccounts.map((acc) => (
+                          <option key={acc.id} value={acc.name}>
+                            {acc.type === 'bank' ? '🏦 ' : '💵 '} {acc.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={editFromAccount}
+                        onChange={(e) => setEditFromAccount(e.target.value)}
+                        placeholder="e.g. Bank Account (Connect Tally first)"
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-[#232528] mb-1">To Account (Destination)</label>
-                    <select
-                      value={editToAccount}
-                      onChange={(e) => setEditToAccount(e.target.value)}
-                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
-                    >
-                      <option value="Cash in Hand">Cash in Hand</option>
-                      <option value="Petty Cash">Petty Cash</option>
-                      <option value="HDFC Bank Account">HDFC Bank Account</option>
-                      <option value="SBI Current Account">SBI Current Account</option>
-                      <option value="ICICI Bank Account">ICICI Bank Account</option>
-                    </select>
+                    {syncedAccounts.length > 0 ? (
+                      <select
+                        value={editToAccount}
+                        onChange={(e) => setEditToAccount(e.target.value)}
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      >
+                        <option value="" disabled>Select Destination Account</option>
+                        {syncedAccounts.map((acc) => (
+                          <option key={acc.id} value={acc.name}>
+                            {acc.type === 'bank' ? '🏦 ' : '💵 '} {acc.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={editToAccount}
+                        onChange={(e) => setEditToAccount(e.target.value)}
+                        placeholder="e.g. Cash in Hand (Connect Tally first)"
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      />
+                    )}
                   </div>
                 </div>
               ) : (
@@ -858,31 +897,53 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-[#232528] mb-1">From Account (Source)</label>
-                    <select
-                      value={fromAccount}
-                      onChange={(e) => setFromAccount(e.target.value)}
-                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
-                    >
-                      <option value="HDFC Bank Account">HDFC Bank Account</option>
-                      <option value="SBI Current Account">SBI Current Account</option>
-                      <option value="ICICI Bank Account">ICICI Bank Account</option>
-                      <option value="Cash in Hand">Cash in Hand</option>
-                      <option value="Petty Cash">Petty Cash</option>
-                    </select>
+                    {syncedAccounts.length > 0 ? (
+                      <select
+                        value={fromAccount}
+                        onChange={(e) => setFromAccount(e.target.value)}
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      >
+                        <option value="" disabled>Select Source Account</option>
+                        {syncedAccounts.map((acc) => (
+                          <option key={acc.id} value={acc.name}>
+                            {acc.type === 'bank' ? '🏦 ' : '💵 '} {acc.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={fromAccount}
+                        onChange={(e) => setFromAccount(e.target.value)}
+                        placeholder="e.g. Bank Account (Connect Tally first)"
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-[#232528] mb-1">To Account (Destination)</label>
-                    <select
-                      value={toAccount}
-                      onChange={(e) => setToAccount(e.target.value)}
-                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
-                    >
-                      <option value="Cash in Hand">Cash in Hand</option>
-                      <option value="Petty Cash">Petty Cash</option>
-                      <option value="HDFC Bank Account">HDFC Bank Account</option>
-                      <option value="SBI Current Account">SBI Current Account</option>
-                      <option value="ICICI Bank Account">ICICI Bank Account</option>
-                    </select>
+                    {syncedAccounts.length > 0 ? (
+                      <select
+                        value={toAccount}
+                        onChange={(e) => setToAccount(e.target.value)}
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      >
+                        <option value="" disabled>Select Destination Account</option>
+                        {syncedAccounts.map((acc) => (
+                          <option key={acc.id} value={acc.name}>
+                            {acc.type === 'bank' ? '🏦 ' : '💵 '} {acc.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={toAccount}
+                        onChange={(e) => setToAccount(e.target.value)}
+                        placeholder="e.g. Cash in Hand (Connect Tally first)"
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      />
+                    )}
                   </div>
                 </div>
               ) : (
@@ -1010,6 +1071,14 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Tally Prime Connection Modal */}
+      <TallyConnectModal
+        isOpen={isTallyModalOpen}
+        onClose={() => setIsTallyModalOpen(false)}
+        isConnected={isConnected}
+        onRefreshStatus={checkConnection}
+      />
     </div>
   );
 }

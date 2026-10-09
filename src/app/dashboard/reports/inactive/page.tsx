@@ -121,7 +121,7 @@ export default function InactiveCustomersPage() {
   const totalDormantValue = customers.reduce((acc, c) => acc + c.total_sales_value, 0);
 
   const handleReactivationWhatsApp = (cust: InactiveCustomer) => {
-    const message = `*Exclusive Greeting from Livekeeping Enterprises*\n\nDear *${cust.party_name}*,\n\nWe noticed it has been *${cust.days_since_last_sale} days* since our last transaction. We value our partnership and would love to support your upcoming supply requirements.\n\n*Special Re-Engagement Offer:*\n• Direct priority dispatch on all industrial valves & fittings.\n• Volume discounts for repeat orders.\n• Updated GST billing & same-day E-Way bill generation.\n\nPlease let us know if we can share our updated catalog or assist with any quotation!\n\nBest regards,\n*Livekeeping Enterprises*`;
+    const message = `*Customer Appreciation & Re-Engagement*\n\nDear *${cust.party_name}*,\n\nWe noticed it has been *${cust.days_since_last_sale} days* since our last transaction. We truly value our partnership and would love to support your upcoming requirements.\n\n*Special Re-Engagement Benefits:*\n• Priority order processing & dedicated dispatch.\n• Volume pricing benefits for repeat orders.\n• Instant GST compliance & same-day billing.\n\nPlease let us know if we can assist with any upcoming requirements or quotations!\n\nBest regards,\n*Sales & Accounts Team*`;
 
     const cleanPhone = (cust.phone_number || '').replace(/\D/g, '');
     const url = cleanPhone 

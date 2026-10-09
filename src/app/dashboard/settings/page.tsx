@@ -359,22 +359,38 @@ export default function SettingsPage() {
             <h3 className="font-extrabold text-base text-[#232528] flex items-center gap-2">
               <Building className="h-5 w-5 text-[#f5ba41]" /> Livekeeping Organization Details
             </h3>
+
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <strong className="font-black text-amber-950 block">No Tally Company Linked</strong>
+                <span className="text-[11px] text-amber-800">
+                  Connect Tally Prime (port 9000) using the sync connector to import your active company legal entity, GSTIN, and branch details.
+                </span>
+              </div>
+              <a
+                href="/"
+                className="px-4 py-2 bg-[#232528] hover:bg-black text-[#f5ba41] rounded-xl font-bold text-xs shrink-0 text-center transition"
+              >
+                Connect Tally on Home
+              </a>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-4 bg-[#f6f5f0] rounded-2xl space-y-1">
                 <span className="text-[#88898b] font-bold block text-[10px] uppercase">Legal Entity Name</span>
-                <span className="font-black text-sm text-[#232528]">LiveTech Pvt Ltd</span>
+                <span className="font-bold text-sm text-[#88898b] italic">Not Synced (Connect Tally First)</span>
               </div>
               <div className="p-4 bg-[#f6f5f0] rounded-2xl space-y-1">
                 <span className="text-[#88898b] font-bold block text-[10px] uppercase">Goods & Services Tax (GSTIN)</span>
-                <span className="font-black text-sm font-mono text-[#232528]">24AAACL9999P1Z2</span>
+                <span className="font-bold text-sm font-mono text-[#88898b] italic">Not Synced</span>
               </div>
               <div className="p-4 bg-[#f6f5f0] rounded-2xl space-y-1">
                 <span className="text-[#88898b] font-bold block text-[10px] uppercase">Primary State & Jurisdiction</span>
-                <span className="font-bold text-[#232528]">Gujarat (State Code 24)</span>
+                <span className="font-bold text-[#88898b] italic">Pending Tally Master Sync</span>
               </div>
               <div className="p-4 bg-[#f6f5f0] rounded-2xl space-y-1">
                 <span className="text-[#88898b] font-bold block text-[10px] uppercase">ERP Integration Backend</span>
-                <span className="font-bold text-[#232528]">Tally Prime XML ODBC Bridge + Supabase Postgres</span>
+                <span className="font-bold text-[#232528]">Tally Prime XML Server (Port 9000) &bull; Supabase Postgres</span>
               </div>
             </div>
           </div>

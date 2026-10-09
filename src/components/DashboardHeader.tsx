@@ -12,7 +12,8 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
-  Check
+  Check,
+  Laptop
 } from 'lucide-react';
 
 export type DatePreset = 'this_month' | 'this_quarter' | 'current_fy' | 'previous_fy' | 'custom';
@@ -34,49 +35,24 @@ export interface CompanyInfo {
 }
 
 interface DashboardHeaderProps {
-  currentCompany?: CompanyInfo;
+  currentCompany?: CompanyInfo | null;
   companies?: CompanyInfo[];
   onCompanyChange?: (company: CompanyInfo) => void;
   dateRange: DateRange;
   onDateRangeChange: (range: DateRange) => void;
   onTriggerSync?: () => void;
+  onConnectTallyClick?: () => void;
   isSyncing?: boolean;
 }
 
-const DEFAULT_COMPANIES: CompanyInfo[] = [
-  {
-    id: 'org-101',
-    name: 'LiveTech Pvt Ltd',
-    gstin: '24AAACL9999P1Z2',
-    lastSyncedAt: '2026-03-12T10:00:00.000Z',
-    syncStatus: 'stale',
-    daysSinceLastSync: 28
-  },
-  {
-    id: 'org-102',
-    name: 'Apex Industries LLP',
-    gstin: '27AABCA5555M1Z1',
-    lastSyncedAt: '2026-04-09T08:00:00.000Z',
-    syncStatus: 'synced',
-    daysSinceLastSync: 0
-  },
-  {
-    id: 'org-103',
-    name: 'Shree Balaji Traders',
-    gstin: '07AAACA1234F1ZX',
-    lastSyncedAt: '2026-04-04T12:00:00.000Z',
-    syncStatus: 'stale',
-    daysSinceLastSync: 5
-  }
-];
-
 export default function DashboardHeader({
-  currentCompany = DEFAULT_COMPANIES[0],
-  companies = DEFAULT_COMPANIES,
+  currentCompany = null,
+  companies = [],
   onCompanyChange,
   dateRange,
   onDateRangeChange,
   onTriggerSync,
+  onConnectTallyClick,
   isSyncing = false
 }: DashboardHeaderProps) {
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
@@ -105,7 +81,6 @@ export default function DashboardHeader({
     const currMonth = today.getMonth(); // 0-indexed
 
     if (preset === 'current_fy') {
-      // Indian FY starts April 1
       const fyStartYear = currMonth >= 3 ? currYear : currYear - 1;
       const fyEndYear = fyStartYear + 1;
       setSelectedFYYear(fyEndYear);
@@ -156,6 +131,8 @@ export default function DashboardHeader({
     return `Synced ${days} days ago`;
   };
 
+  const hasConnectedCompany = Boolean(currentCompany && currentCompany.name);
+
   return (
     <div className="space-y-3 select-none">
       {/* 1. TOP BAR: Company Switcher & Date Range Controls */}
@@ -168,20 +145,30 @@ export default function DashboardHeader({
             className="w-full sm:w-auto flex items-center justify-between sm:justify-start space-x-2.5 px-3 py-2 rounded-2xl bg-white border border-[#e5e3dc] hover:border-[#f5ba41] transition shadow-xs text-left group"
           >
             <div className="flex items-center space-x-2.5 truncate">
-              <div className="h-8 w-8 rounded-xl bg-[#232528] text-[#f5ba41] flex items-center justify-center font-black text-xs shrink-0">
+              <div className={`h-8 w-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                hasConnectedCompany ? 'bg-[#232528] text-[#f5ba41]' : 'bg-amber-100 text-amber-800'
+              }`}>
                 <Building2 className="h-4 w-4" />
               </div>
               <div className="truncate">
                 <div className="flex items-center space-x-1 font-bold text-xs sm:text-sm text-[#232528] group-hover:text-black">
-                  <span className="truncate max-w-[170px] sm:max-w-[220px]">{currentCompany.name}</span>
+                  <span className="truncate max-w-[170px] sm:max-w-[220px]">
+                    {hasConnectedCompany ? currentCompany!.name : 'No Company Connected'}
+                  </span>
                   <ChevronDown className="h-3.5 w-3.5 text-[#88898b] group-hover:text-[#232528] shrink-0" />
                 </div>
                 <div className="text-[10px] text-[#88898b] flex items-center gap-1 font-medium truncate">
-                  <span>{currentCompany.gstin}</span>
-                  <span>•</span>
-                  <span className={currentCompany.daysSinceLastSync > 0 ? 'text-amber-600 font-semibold' : 'text-emerald-600'}>
-                    {formatRelativeSync(currentCompany.daysSinceLastSync)}
-                  </span>
+                  {hasConnectedCompany ? (
+                    <>
+                      <span>{currentCompany!.gstin}</span>
+                      <span>•</span>
+                      <span className={currentCompany!.daysSinceLastSync > 0 ? 'text-amber-600 font-semibold' : 'text-emerald-600'}>
+                        {formatRelativeSync(currentCompany!.daysSinceLastSync)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-amber-600 font-bold">Connect Tally First</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -189,32 +176,50 @@ export default function DashboardHeader({
 
           {/* Dropdown Menu */}
           {isCompanyDropdownOpen && (
-            <div className="absolute left-0 top-full mt-2 w-full sm:w-72 bg-white border border-[#e5e3dc] rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in-50 zoom-in-95">
+            <div className="absolute left-0 top-full mt-2 w-full sm:w-80 bg-white border border-[#e5e3dc] rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-in fade-in-50 zoom-in-95">
               <div className="px-3 py-1.5 text-[10px] font-bold text-[#88898b] uppercase tracking-wider">
                 Select Tally Company
               </div>
-              {companies.map((comp) => (
-                <button
-                  key={comp.id}
-                  onClick={() => {
-                    if (onCompanyChange) onCompanyChange(comp);
-                    setIsCompanyDropdownOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition ${
-                    comp.id === currentCompany.id
-                      ? 'bg-[#fafaf8] border border-[#f5ba41] font-bold text-[#232528]'
-                      : 'hover:bg-[#f6f5f0] text-[#555]'
-                  }`}
-                >
-                  <div>
-                    <div className="font-bold text-[#232528]">{comp.name}</div>
-                    <div className="text-[10px] text-[#88898b] font-mono">{comp.gstin}</div>
-                  </div>
-                  {comp.id === currentCompany.id && (
-                    <Check className="h-4 w-4 text-[#f5ba41]" />
-                  )}
-                </button>
-              ))}
+              {companies.length > 0 ? (
+                companies.map((comp) => (
+                  <button
+                    key={comp.id}
+                    onClick={() => {
+                      if (onCompanyChange) onCompanyChange(comp);
+                      setIsCompanyDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs transition ${
+                      currentCompany && comp.id === currentCompany.id
+                        ? 'bg-[#fafaf8] border border-[#f5ba41] font-bold text-[#232528]'
+                        : 'hover:bg-[#f6f5f0] text-[#555]'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-bold text-[#232528]">{comp.name}</div>
+                      <div className="text-[10px] text-[#88898b] font-mono">{comp.gstin}</div>
+                    </div>
+                    {currentCompany && comp.id === currentCompany.id && (
+                      <Check className="h-4 w-4 text-[#f5ba41]" />
+                    )}
+                  </button>
+                ))
+              ) : (
+                <div className="p-3 text-center space-y-2">
+                  <p className="text-xs text-[#88898b]">
+                    No companies synced from Tally Prime yet.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setIsCompanyDropdownOpen(false);
+                      if (onConnectTallyClick) onConnectTallyClick();
+                    }}
+                    className="w-full py-2 px-3 bg-[#232528] hover:bg-black text-[#f5ba41] text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Laptop className="h-3.5 w-3.5" />
+                    <span>Connect Tally First</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -300,8 +305,28 @@ export default function DashboardHeader({
         </div>
       )}
 
-      {/* 2. SYNC HEALTH WARNING BANNER (Not Synced since X days | Sync Now (!)) */}
-      {currentCompany.daysSinceLastSync > 0 && (
+      {/* 2. SYNC / CONNECTION BANNER */}
+      {!hasConnectedCompany ? (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-3 sm:px-4 sm:py-2.5 shadow-xs animate-in fade-in-50 duration-200">
+          <div className="flex items-center space-x-2.5 text-xs font-semibold">
+            <div className="h-6 w-6 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center shrink-0 font-black text-xs">
+              !
+            </div>
+            <div>
+              <span><strong className="font-black text-amber-950">Tally Prime is not connected!</strong></span>
+              <span className="text-amber-800 text-[11px] ml-1 sm:ml-2">Please connect Tally first to sync company records, accounts, and live ledger data.</span>
+            </div>
+          </div>
+
+          <button
+            onClick={onConnectTallyClick || onTriggerSync}
+            className="w-full sm:w-auto flex items-center justify-center space-x-1.5 px-4 py-2 sm:py-1.5 bg-[#232528] hover:bg-black text-[#f5ba41] rounded-xl text-xs font-bold shadow-sm transition active:scale-95 shrink-0"
+          >
+            <Laptop className="h-3.5 w-3.5" />
+            <span>Connect Tally First</span>
+          </button>
+        </div>
+      ) : currentCompany && currentCompany.daysSinceLastSync > 0 ? (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-3 sm:px-4 sm:py-2.5 shadow-xs animate-in fade-in-50 duration-200">
           <div className="flex items-center space-x-2.5 text-xs font-semibold">
             <div className="h-6 w-6 rounded-full bg-rose-200 text-rose-800 flex items-center justify-center shrink-0 font-black text-xs">
@@ -322,7 +347,7 @@ export default function DashboardHeader({
             <span>{isSyncing ? 'Syncing...' : 'Sync Now (!)'}</span>
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

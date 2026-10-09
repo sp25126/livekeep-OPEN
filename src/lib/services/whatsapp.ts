@@ -15,7 +15,7 @@ export interface WhatsAppReminderParams {
  */
 export function generateDirectWhatsAppUrl(params: WhatsAppReminderParams): string {
   const cleanPhone = (params.phoneNumber || '').replace(/\D/g, '');
-  const message = `*Tax Invoice: ${params.voucherNumber}*\n\nDear *${params.partyName}*,\nYour invoice for *₹${Number(params.amount).toLocaleString('en-IN')}* is generated.\n\n*Billing Summary:*\n• Invoice No: ${params.voucherNumber}\n• Total Amount: ₹${Number(params.amount).toLocaleString('en-IN')}\n• GSTIN: ${params.partyGstin || '24AAACL9999P1Z2'}\n${params.irnNumber ? `• Verified IRN: ${params.irnNumber.substring(0, 16)}...\n` : ''}${params.pdfUrl ? `• Download PDF: ${params.pdfUrl}\n` : ''}\nThank you for choosing Livekeeping Enterprises!`;
+  const message = `*Tax Invoice: ${params.voucherNumber}*\n\nDear *${params.partyName}*,\nYour invoice for *₹${Number(params.amount).toLocaleString('en-IN')}* is generated.\n\n*Billing Summary:*\n• Invoice No: ${params.voucherNumber}\n• Total Amount: ₹${Number(params.amount).toLocaleString('en-IN')}\n• GSTIN: ${params.partyGstin || 'Unregistered'}\n${params.irnNumber ? `• Verified IRN: ${params.irnNumber.substring(0, 16)}...\n` : ''}${params.pdfUrl ? `• Download PDF: ${params.pdfUrl}\n` : ''}\nThank you for your business!`;
   
   if (cleanPhone) {
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;

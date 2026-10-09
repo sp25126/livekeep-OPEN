@@ -25,25 +25,19 @@ export default function AdjustmentForm({ voucherType, onSubmit, onCancel }: Adju
 
   const [partyName, setPartyName] = useState('');
   const [partyGstin, setPartyGstin] = useState('');
-  const [originalInvoiceNo, setOriginalInvoiceNo] = useState('INV/2026-27/042');
-  const [originalInvoiceDate, setOriginalInvoiceDate] = useState('2026-03-15');
+  const [originalInvoiceNo, setOriginalInvoiceNo] = useState('');
+  const [originalInvoiceDate, setOriginalInvoiceDate] = useState('');
   const [reasonCode, setReasonCode] = useState('01');
-  const [taxableAmount, setTaxableAmount] = useState('10000');
+  const [taxableAmount, setTaxableAmount] = useState('');
   const [gstRate, setGstRate] = useState(18);
-  const [narration, setNarration] = useState(
-    isCreditNote
-      ? 'Credit Note issued towards defective goods returned by customer'
-      : isDebitNote
-      ? 'Debit Note raised on vendor for rate variance in supply bill'
-      : 'Depreciation & Year-end adjustment entry'
-  );
+  const [narration, setNarration] = useState('');
 
   // For Multi-row Journal entries
   const [debitLedgers, setDebitLedgers] = useState<LedgerEntry[]>([
-    { ledger_name: 'Depreciation Account', amount: 15000, type: 'dr' }
+    { ledger_name: '', amount: 0, type: 'dr' }
   ]);
   const [creditLedgers, setCreditLedgers] = useState<LedgerEntry[]>([
-    { ledger_name: 'Plant & Machinery Account', amount: 15000, type: 'cr' }
+    { ledger_name: '', amount: 0, type: 'cr' }
   ]);
 
   const numTaxable = parseFloat(taxableAmount) || 0;
