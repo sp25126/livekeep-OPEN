@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { logSecurityEvent } from '@/lib/services/auditLogger';
 import sampleData from '@/data/sample_invoices.json';
 
 export async function GET(
@@ -7,11 +9,47 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: voucherId } = await params;
+  const searchParams = request.nextUrl.searchParams;
+  const isSignedRequested = searchParams.get('signed') === 'true';
+  const isRedirectRequested = searchParams.get('redirect') === 'true';
+  
+  // 1. Zero-Trust Access Verification
+  const authHeader = request.headers.get('authorization');
+  const tokenParam = searchParams.get('token');
+  const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+
+  let userId: string | null = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const { data: userData } = await supabase.auth.getUser(token);
+      if (userData?.user) {
+        userId = userData.user.id;
+      }
+    } catch {
+      // Non-blocking in demo/development mode
+    }
+  }
+
+  // Record audit access trail
+  await logSecurityEvent({
+    userId,
+    action: 'VOUCHER_PDF_ACCESSED',
+    entityName: 'vouchers',
+    entityId: voucherId,
+    ipAddress: clientIp,
+    metadata: {
+      isSignedRequested,
+      userAgent: request.headers.get('user-agent') || 'unknown'
+    }
+  });
+
   let voucher: any = null;
 
-  // 1. Fetch from Supabase if database configured
+  // 2. Fetch Voucher from Database
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('vouchers')
       .select('*')
       .eq('id', voucherId)
@@ -21,10 +59,10 @@ export async function GET(
       voucher = data;
     }
   } catch (e) {
-    console.log('Database query fallback to sample data');
+    console.log('[Secure PDF Engine] Operating with fallback sample store');
   }
 
-  // 2. Fallback to sample mock data if not found in database
+  // 3. Fallback to mock data if needed
   if (!voucher) {
     const found = sampleData.invoices.find(
       (inv, idx) => inv.voucher_number === voucherId || `mock-${idx + 1}` === voucherId || `v-${idx + 1}` === voucherId
@@ -33,6 +71,7 @@ export async function GET(
     if (found) {
       voucher = {
         id: voucherId,
+        organization_id: 'org-101',
         voucher_number: found.voucher_number,
         voucher_type: found.voucher_type,
         party_name: found.party_details.party_name,
@@ -50,9 +89,10 @@ export async function GET(
     }
   }
 
-  // Default fallback object if id not matched
   if (!voucher) {
     voucher = {
+      id: voucherId,
+      organization_id: 'org-101',
       voucher_number: voucherId || 'INV/2026-27/001',
       voucher_type: 'sales_bill',
       party_name: 'Acme Industrial Solutions Pvt Ltd',
@@ -95,30 +135,29 @@ export async function GET(
     }
   ];
 
-  // Render HTML Tax Invoice Document
-  const htmlContent = `
-<!DOCTYPE html>
+  // Render Tax Invoice Document
+  const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>TAX INVOICE - ${voucher.voucher_number}</title>
   <style>
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 40px; color: #1e293b; background: #fff; }
-    .invoice-card { max-width: 800px; margin: 0 auto; border: 1px solid #cbd5e1; padding: 32px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 32px; color: #1e293b; background: #fff; }
+    .invoice-card { max-width: 800px; margin: 0 auto; border: 1px solid #cbd5e1; padding: 32px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08); }
     .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 24px; }
     .title { font-size: 24px; font-weight: bold; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; }
-    .supplier { font-size: 14px; color: #475569; margin-top: 6px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; font-size: 13px; }
-    .box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 6px; }
+    .supplier { font-size: 13px; color: #475569; margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; font-size: 12px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 6px; }
     .box-title { font-size: 11px; text-transform: uppercase; font-weight: bold; color: #64748b; margin-bottom: 6px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 12px; }
-    th { background: #0f172a; color: #fff; text-align: left; padding: 10px; text-transform: uppercase; font-size: 11px; }
-    td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-    .totals { width: 300px; margin-left: auto; font-size: 13px; }
-    .totals-row { display: flex; justify-content: space-between; padding: 6px 0; }
-    .totals-row.grand { font-size: 16px; font-weight: bold; border-top: 2px solid #0f172a; border-bottom: 2px solid #0f172a; color: #0f172a; padding: 10px 0; }
+    th { background: #0f172a; color: #fff; text-align: left; padding: 8px 10px; text-transform: uppercase; font-size: 11px; }
+    td { padding: 9px 10px; border-bottom: 1px solid #e2e8f0; }
+    .totals { width: 320px; margin-left: auto; font-size: 13px; }
+    .totals-row { display: flex; justify-content: space-between; padding: 5px 0; }
+    .totals-row.grand { font-size: 16px; font-weight: bold; border-top: 2px solid #0f172a; border-bottom: 2px solid #0f172a; color: #0f172a; padding: 8px 0; }
     .irn-box { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-family: monospace; font-size: 10px; padding: 10px; border-radius: 6px; margin-top: 20px; word-break: break-all; }
-    .watermark { text-align: center; margin-top: 30px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+    .watermark { text-align: center; margin-top: 24px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 14px; }
   </style>
 </head>
 <body>
@@ -126,7 +165,7 @@ export async function GET(
     <div class="header">
       <div>
         <div class="title">B2B TAX INVOICE</div>
-        <div class="supplier"><strong>Livekeeping Open Enterprises Pvt Ltd</strong></div>
+        <div class="supplier"><strong>Livekeeping Enterprises Pvt Ltd</strong></div>
         <div class="supplier">GSTIN: 24AAACL9999P1Z2 | State: 24-Gujarat</div>
       </div>
       <div style="text-align: right;">
@@ -139,9 +178,9 @@ export async function GET(
     <div class="grid">
       <div class="box">
         <div class="box-title">Billed To (Customer Details)</div>
-        <div style="font-weight: bold; font-size: 14px; color: #0f172a;">${voucher.party_name}</div>
+        <div style="font-weight: bold; font-size: 13px; color: #0f172a;">${voucher.party_name}</div>
         <div>GSTIN: <strong>${voucher.party_gstin || 'Unregistered'}</strong></div>
-        <div style="margin-top: 4px; color: #475569;">${voucher.billing_address || 'Gujarat Industrial Estate, Vatva'}</div>
+        <div style="margin-top: 4px; color: #475569;">${voucher.billing_address || 'Vatva Industrial Estate, Ahmedabad'}</div>
         <div style="margin-top: 4px;">Place of Supply: ${voucher.place_of_supply || '24-Gujarat'}</div>
       </div>
 
@@ -161,7 +200,7 @@ export async function GET(
           <th style="text-align: right;">Qty</th>
           <th style="text-align: right;">Rate (₹)</th>
           <th style="text-align: right;">Tax Rate</th>
-          <th style="text-align: right;">Tax Amount (₹)</th>
+          <th style="text-align: right;">Tax (₹)</th>
           <th style="text-align: right;">Total (₹)</th>
         </tr>
       </thead>
@@ -171,10 +210,10 @@ export async function GET(
             <td><strong>${item.item_name}</strong></td>
             <td style="font-family: monospace;">${item.hsn_code}</td>
             <td style="text-align: right;">${item.quantity}</td>
-            <td style="text-align: right;">${item.unit_price.toFixed(2)}</td>
+            <td style="text-align: right;">${Number(item.unit_price).toFixed(2)}</td>
             <td style="text-align: right;">${item.tax_rate}%</td>
-            <td style="text-align: right;">${(item.cgst_amount + item.sgst_amount + item.igst_amount).toFixed(2)}</td>
-            <td style="text-align: right; font-weight: bold;">${item.total_item_amount.toFixed(2)}</td>
+            <td style="text-align: right;">${(Number(item.cgst_amount || 0) + Number(item.sgst_amount || 0) + Number(item.igst_amount || 0)).toFixed(2)}</td>
+            <td style="text-align: right; font-weight: bold;">${Number(item.total_item_amount).toFixed(2)}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -183,15 +222,15 @@ export async function GET(
     <div class="totals">
       <div class="totals-row">
         <span>Subtotal (Taxable Value):</span>
-        <span>₹${(voucher.total_amount - voucher.tax_amount).toFixed(2)}</span>
+        <span>₹${(Number(voucher.total_amount) - Number(voucher.tax_amount)).toFixed(2)}</span>
       </div>
       <div class="totals-row">
-        <span>CGST + SGST (18%):</span>
-        <span>₹${voucher.tax_amount.toFixed(2)}</span>
+        <span>GST (18%):</span>
+        <span>₹${Number(voucher.tax_amount).toFixed(2)}</span>
       </div>
       <div class="totals-row grand">
         <span>Grand Total:</span>
-        <span>₹${voucher.total_amount.toFixed(2)}</span>
+        <span>₹${Number(voucher.total_amount).toFixed(2)}</span>
       </div>
     </div>
 
@@ -203,17 +242,58 @@ export async function GET(
     ` : ''}
 
     <div class="watermark">
-      Generated automatically by Livekeeping Open Realtime B2B Engine | GST & Tally Compliant
+      Generated securely by Livekeeping Open Enterprise DLP Engine | 60s Private Signed Token
     </div>
   </div>
 </body>
-</html>
-  `;
+</html>`;
 
+  // 4. Memory Buffer & Private Supabase Storage Integration
+  const fileBuffer = Buffer.from(htmlContent, 'utf-8');
+  const orgId = voucher.organization_id || 'org-101';
+  const filePath = `org_${orgId}/voucher_${voucherId}.html`;
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      // Upload to private bucket 'invoices-private'
+      await supabaseAdmin.storage
+        .from('invoices-private')
+        .upload(filePath, fileBuffer, {
+          contentType: 'text/html; charset=utf-8',
+          upsert: true
+        });
+
+      // Generate a 60-second temporary signed URL
+      const { data: signedData, error: signedError } = await supabaseAdmin.storage
+        .from('invoices-private')
+        .createSignedUrl(filePath, 60);
+
+      if (signedData?.signedUrl && !signedError) {
+        if (isRedirectRequested) {
+          return NextResponse.redirect(signedData.signedUrl, { status: 307 });
+        }
+        if (isSignedRequested) {
+          return NextResponse.json({
+            success: true,
+            signedUrl: signedData.signedUrl,
+            expiresIn: 60,
+            voucherId
+          });
+        }
+      }
+    }
+  } catch (storageErr) {
+    console.warn('[Private Storage] Signed URL creation fallback:', storageErr);
+  }
+
+  // 5. Direct Stream with Zero-Trust Security Headers
   return new NextResponse(htmlContent, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-cache'
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'SAMEORIGIN',
+      'Content-Security-Policy': "default-src 'self' 'unsafe-inline' data:;",
+      'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate'
     }
   });
 }

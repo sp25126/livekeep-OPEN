@@ -121,3 +121,47 @@ CREATE POLICY "Admins can view GPS logs for their organization" ON public.sales_
 -- 8. REALTIME ENGINE PUBLICATION
 ALTER PUBLICATION supabase_realtime ADD TABLE public.vouchers;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.sales_field_logs;
+
+-- 9. IMMUTABLE SYSTEM AUDIT LOGS (Zero-Trust Security & DLP)
+CREATE TABLE IF NOT EXISTS public.system_audit_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users(id),
+    action TEXT NOT NULL, -- e.g., 'VOUCHER_CREATED', 'VOUCHER_APPROVED', 'VOUCHER_CANCELLED'
+    entity_name TEXT NOT NULL, -- 'vouchers', 'profiles'
+    entity_id UUID,
+    ip_address TEXT,
+    old_data JSONB,
+    new_data JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Protect Audit Logs: Read-only for Admins, no INSERT/UPDATE/DELETE allowed for regular users
+ALTER TABLE public.system_audit_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins view audit logs" ON public.system_audit_logs;
+CREATE POLICY "Admins view audit logs" ON public.system_audit_logs 
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    );
+
+-- 10. AUTOMATED AUDIT TRIGGER FOR VOUCHERS
+CREATE OR REPLACE FUNCTION log_voucher_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.system_audit_logs (user_id, action, entity_name, entity_id, old_data, new_data)
+    VALUES (
+        auth.uid(),
+        TG_OP,
+        'vouchers',
+        COALESCE(NEW.id, OLD.id),
+        CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN to_jsonb(OLD) ELSE NULL END,
+        CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN to_jsonb(NEW) ELSE NULL END
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS audit_vouchers_trigger ON public.vouchers;
+CREATE TRIGGER audit_vouchers_trigger
+AFTER INSERT OR UPDATE OR DELETE ON public.vouchers
+FOR EACH ROW EXECUTE FUNCTION log_voucher_changes();

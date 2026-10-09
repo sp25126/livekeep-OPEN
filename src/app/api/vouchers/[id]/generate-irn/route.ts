@@ -5,6 +5,7 @@ import { nicConfig } from '@/lib/services/nic-gst/config';
 import { authenticate, nicEncrypt, nicDecrypt } from '@/lib/services/nic-gst/crypto';
 import { buildInvoicePayload } from '@/lib/services/nic-gst/payloadBuilder';
 import sampleData from '@/data/sample_invoices.json';
+import { logSecurityEvent } from '@/lib/services/auditLogger';
 
 export async function POST(
   request: NextRequest,
@@ -135,6 +136,20 @@ export async function POST(
     } catch (dbUpdateErr) {
       console.log('[NIC IRN] Local state updated with generated IRN');
     }
+
+    // Zero-Trust Security Audit Logging
+    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+    await logSecurityEvent({
+      action: 'IRN_GENERATED',
+      entityName: 'nic_compliance',
+      entityId: voucherId,
+      ipAddress: clientIp,
+      metadata: {
+        irn: generatedIrn,
+        ewayBillNo: generatedEwb,
+        voucherNumber: voucher.voucher_number
+      }
+    });
 
     console.log(`✅ [NIC IRN Success] Generated IRN: ${generatedIrn}, E-Way Bill: ${generatedEwb || 'Not Required (<50k)'}`);
 

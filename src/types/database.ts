@@ -65,3 +65,16 @@ export interface SalesFieldLog {
   accuracy?: number;
   logged_at: string;
 }
+
+export interface SystemAuditLog {
+  id: string;
+  user_id?: string | null;
+  action: string;
+  entity_name: string;
+  entity_id?: string | null;
+  ip_address?: string | null;
+  old_data?: Record<string, any> | null;
+  new_data?: Record<string, any> | null;
+  created_at: string;
+}
+

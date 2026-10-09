@@ -80,6 +80,20 @@ Small and medium businesses (MSMEs) in India heavily rely on **Tally Prime / Tal
 ### 3.8. Enterprise Role-Based Access Control (RBAC) & User Management
 - **Requirement:** Dedicated Admin portal (`/dashboard/users`) to create users, assign roles (`admin`, `manager`, `checker`, `maker`), reset passwords, and revoke access using the Supabase Service Role Key.
 
+### 3.9. Enterprise Data Security & Anti-Data Leakage Controls (Zero-Trust DLP)
+- **Requirement:** Guarantee financial data confidentiality, zero client key exposure, and isolated storage.
+- **Client Bundle Sanitization:** Private keys (`SUPABASE_SERVICE_ROLE_KEY`, `NIC_CLIENT_SECRET`, `META_WHATSAPP_TOKEN`) execute strictly within serverless Node.js runtimes. Client bundle receives only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- **Private Document Storage:** Generated invoices and bills stored in private bucket `invoices-private` with 60-second temporary signed URLs (`createSignedUrl(path, 60)`).
+- **Immutable Audit Trail:** All critical operations (user creation, role elevation, voucher approval, IRN generation, PDF access, cancellation) logged write-only to `system_audit_logs`.
+- **Tally Bridge Loopback Isolation:** Tally Prime communication restricted strictly to internal loopback adapter `127.0.0.1:9000`.
+
+### 3.10. Automated Tax Calculation & Billing Utility (`taxEngine.ts`)
+- **Requirement:** GST-compliant tax calculation across intra-state and inter-state supplies.
+- **Rules:**
+  - Intra-State (`sellerStateCode === buyerStateCode`): Split evenly into CGST (50%) and SGST (50%), IGST = 0.
+  - Inter-State (`sellerStateCode !== buyerStateCode`): 100% applied to IGST, CGST = 0, SGST = 0.
+  - Automatic precision rounding to 2 decimal places.
+
 ---
 
 ## 4. Non-Functional & Design Requirements
@@ -87,3 +101,5 @@ Small and medium businesses (MSMEs) in India heavily rely on **Tally Prime / Tal
 2. **Non-Tech Friendly:** Clear plain-English labels, prominent Indian Rupee (`₹`) typography, minimum 48px touch targets, zero clutter.
 3. **Responsiveness:** 100% fluid across 375px mobile viewports up to 1920px 4K monitors.
 4. **Performance:** Sub-100ms API response times, sub-2s initial page load on 4G networks.
+5. **Security Standard:** Zero-Trust architecture, TLS 1.3 encryption, short-lived signed URLs, immutable database audit triggers.
+

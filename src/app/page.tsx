@@ -6,6 +6,7 @@ import { Voucher, UserRole, PaymentStatus } from '@/types/database';
 import sampleData from '@/data/sample_invoices.json';
 import confetti from 'canvas-confetti';
 import { queueOfflineVoucher } from '@/lib/services/offlineSync';
+import { calculateInvoiceTaxes } from '@/lib/billing/taxEngine';
 
 // Modular Responsive Components
 import Navigation from '@/components/Navigation';
@@ -190,7 +191,23 @@ export default function Dashboard() {
     if (!partyName || !amount) return;
 
     const numericAmount = parseFloat(amount);
-    const tax = Math.round(numericAmount * 0.18 * 100) / 100;
+    const sellerStateCode = '24'; // Gujarat (seller)
+    const buyerStateCode = partyGstin?.trim().substring(0, 2) || '24';
+
+    const taxCalc = calculateInvoiceTaxes(
+      [
+        {
+          itemName: 'B2B Commercial Supplies',
+          hsnCode: '84818030',
+          quantity: 1,
+          unitPrice: numericAmount,
+          taxRate: 18
+        }
+      ],
+      sellerStateCode,
+      buyerStateCode
+    );
+
     const nextNum = `INV/2026-27/${String(vouchers.length + 1).padStart(3, '0')}`;
 
     const newVoucher: Voucher = {
@@ -200,9 +217,20 @@ export default function Dashboard() {
       voucher_type: voucherType,
       party_name: partyName,
       party_gstin: partyGstin,
-      total_amount: numericAmount + tax,
-      tax_amount: tax,
+      total_amount: taxCalc.grandTotal,
+      tax_amount: taxCalc.totalTax,
       status: 'pending',
+      items: taxCalc.itemBreakdowns.map((item) => ({
+        item_name: item.itemName || 'Commercial Supply',
+        hsn_code: item.hsnCode,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        tax_rate: item.taxRate,
+        cgst_amount: item.cgstAmount,
+        sgst_amount: item.sgstAmount,
+        igst_amount: item.igstAmount,
+        total_item_amount: item.totalAmount
+      })),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

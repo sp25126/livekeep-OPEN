@@ -78,7 +78,11 @@ live-keeping_open/
 │   │   ├── supabase.ts              # Standard client-side Supabase client (Anon Key)
 │   │   ├── supabaseAdmin.ts         # Server-side Supabase Admin client (Service Role Key)
 │   │   │
+│   │   ├── billing/
+│   │   │   └── taxEngine.ts         # Automated Intra/Inter-State GST tax engine & rounding utility
+│   │   │
 │   │   └── services/
+│   │       ├── auditLogger.ts       # Zero-Trust security event logger (system_audit_logs)
 │   │       ├── whatsapp.ts          # Meta WhatsApp Cloud API HTTP client
 │   │       ├── offlineSync.ts       # LocalStorage/IndexedDB offline voucher mutation queue
 │   │       │

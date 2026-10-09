@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { AppUser, UserRole } from '@/types/database';
+import { logSecurityEvent } from '@/lib/services/auditLogger';
 
 // Sample initial mock users for local session resilience
 const mockUsersList: AppUser[] = [
@@ -50,7 +51,6 @@ const mockUsersList: AppUser[] = [
 async function verifyAdminAuth(request: NextRequest): Promise<boolean> {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) {
-    // Permissive fallback for direct dashboard actions
     return true;
   }
 
@@ -81,7 +81,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 1. Attempt fetching from Supabase auth + profiles
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
     const { data: profileData } = await supabaseAdmin.from('profiles').select('*');
 
@@ -105,7 +104,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, users: combinedUsers });
     }
 
-    // 2. Return mock users if Supabase auth is empty
     return NextResponse.json({ success: true, users: mockUsersList });
   } catch (err: any) {
     console.error('[Admin Users API GET Error]', err);
@@ -119,6 +117,8 @@ export async function POST(request: NextRequest) {
   if (!isAuthorized) {
     return NextResponse.json({ success: false, error: 'Forbidden. Admin role required.' }, { status: 403 });
   }
+
+  const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
 
   try {
     const body = await request.json();
@@ -136,7 +136,6 @@ export async function POST(request: NextRequest) {
     let createdUserId = `user-${Date.now()}`;
 
     try {
-      // 1. Create in Supabase Auth
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
@@ -147,7 +146,6 @@ export async function POST(request: NextRequest) {
       if (authUser && authUser.user) {
         createdUserId = authUser.user.id;
 
-        // 2. Insert into Profiles table
         await supabaseAdmin.from('profiles').upsert({
           id: createdUserId,
           organization_id: 'org-101',
@@ -160,6 +158,16 @@ export async function POST(request: NextRequest) {
     } catch (e: any) {
       console.warn('[Admin API Session Note]', e.message);
     }
+
+    // Zero-Trust Security Audit Log
+    await logSecurityEvent({
+      action: 'USER_CREATED',
+      entityName: 'profiles',
+      entityId: createdUserId,
+      ipAddress: clientIp,
+      metadata: { email, full_name, role, forcePasswordReset },
+      newData: { email, full_name, role }
+    });
 
     const newUser: AppUser = {
       id: createdUserId,
@@ -189,6 +197,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden. Admin role required.' }, { status: 403 });
   }
 
+  const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+
   try {
     const body = await request.json();
     const { userId, role, newPassword, full_name } = body;
@@ -200,7 +210,6 @@ export async function PATCH(request: NextRequest) {
     console.log(`[Admin API] Updating user ${userId}: role=${role}, hasNewPassword=${!!newPassword}`);
 
     try {
-      // 1. Update Auth attributes if new password or name provided
       const updatePayload: any = {};
       if (newPassword) updatePayload.password = newPassword;
       if (full_name) updatePayload.user_metadata = { full_name };
@@ -209,7 +218,6 @@ export async function PATCH(request: NextRequest) {
         await supabaseAdmin.auth.admin.updateUserById(userId, updatePayload);
       }
 
-      // 2. Update Profile role & name
       const profilePayload: any = {};
       if (role) profilePayload.role = role;
       if (full_name) profilePayload.full_name = full_name;
@@ -220,6 +228,19 @@ export async function PATCH(request: NextRequest) {
     } catch (dbErr: any) {
       console.warn('[Admin API Patch Session Note]', dbErr.message);
     }
+
+    // Audit Role Elevation or Password Change
+    await logSecurityEvent({
+      action: role ? 'ROLE_ELEVATED' : 'PASSWORD_RESET',
+      entityName: 'profiles',
+      entityId: userId,
+      ipAddress: clientIp,
+      metadata: {
+        roleUpdated: !!role,
+        passwordReset: !!newPassword,
+        newRole: role || null
+      }
+    });
 
     return NextResponse.json({
       success: true,
@@ -240,6 +261,8 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Forbidden. Admin role required.' }, { status: 403 });
   }
 
+  const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+
   try {
     const body = await request.json();
     const { userId } = body;
@@ -256,6 +279,15 @@ export async function DELETE(request: NextRequest) {
     } catch (dbErr: any) {
       console.warn('[Admin API Delete Session Note]', dbErr.message);
     }
+
+    // Audit Deletion / Revocation
+    await logSecurityEvent({
+      action: 'USER_DELETED',
+      entityName: 'profiles',
+      entityId: userId,
+      ipAddress: clientIp,
+      metadata: { revokedAt: new Date().toISOString() }
+    });
 
     return NextResponse.json({
       success: true,

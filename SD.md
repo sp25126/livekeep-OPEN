@@ -123,13 +123,26 @@ CREATE TABLE public.sales_field_logs (
     note TEXT,
     captured_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- 4. Immutable System Audit Logs (Zero-Trust DLP)
+CREATE TABLE public.system_audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id),
+    action TEXT NOT NULL,
+    entity_name TEXT NOT NULL,
+    entity_id TEXT,
+    ip_address TEXT,
+    old_data JSONB,
+    new_data JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
 
-### 2.3. Row Level Security (RLS) Policies
+### 2.3. Row Level Security (RLS) & Automated Audit Triggers
 ```sql
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vouchers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_field_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticated users to read vouchers of their organization
 CREATE POLICY "Users can read vouchers in their org" ON public.vouchers
@@ -148,7 +161,41 @@ CREATE POLICY "Checkers and Admins can update vouchers" ON public.vouchers
             AND profiles.role IN ('admin', 'checker', 'manager')
         )
     );
+
+-- Audit Logs: Read-only for Admins, no INSERT/UPDATE/DELETE allowed for regular users
+CREATE POLICY "Admins view audit logs" ON public.system_audit_logs 
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+    );
+
+-- Automated Voucher Audit Trigger
+CREATE OR REPLACE FUNCTION log_voucher_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.system_audit_logs (user_id, action, entity_name, entity_id, old_data, new_data)
+    VALUES (
+        auth.uid(),
+        TG_OP,
+        'vouchers',
+        COALESCE(NEW.id, OLD.id),
+        CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN to_jsonb(OLD) ELSE NULL END,
+        CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN to_jsonb(NEW) ELSE NULL END
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER audit_vouchers_trigger
+AFTER INSERT OR UPDATE OR DELETE ON public.vouchers
+FOR EACH ROW EXECUTE FUNCTION log_voucher_changes();
 ```
+
+### 2.4. Automated Tax Calculation Engine (`src/lib/billing/taxEngine.ts`)
+- **Intra-State Supply (Seller State == Buyer State)**:
+  `CGST = totalTax / 2`, `SGST = totalTax / 2`, `IGST = 0`
+- **Inter-State Supply (Seller State != Buyer State)**:
+  `CGST = 0`, `SGST = 0`, `IGST = totalTax`
+- **Precision**: 2-decimal rounded precision arithmetic across all line items and invoice grand totals.
 
 ---
 
