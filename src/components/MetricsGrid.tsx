@@ -17,6 +17,7 @@ import { Voucher } from '@/types/database';
 
 interface MetricsGridProps {
   vouchers: Voucher[];
+  isLoading?: boolean;
   onSelectMetric?: (metricId: string) => void;
 }
 
@@ -40,8 +41,36 @@ export const formatIndianCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-export default function MetricsGrid({ vouchers, onSelectMetric }: MetricsGridProps) {
-  // Aggregate dynamic metrics from vouchers
+export default function MetricsGrid({ vouchers, isLoading = false, onSelectMetric }: MetricsGridProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div
+            key={i}
+            className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[24px] p-4 animate-pulse space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 rounded-2xl bg-[#e5e3dc]/70" />
+                <div className="space-y-1.5">
+                  <div className="h-3 w-16 bg-[#e5e3dc]/80 rounded" />
+                  <div className="h-2 w-24 bg-[#e5e3dc]/50 rounded" />
+                </div>
+              </div>
+              <div className="h-4 w-12 bg-[#e5e3dc]/60 rounded-full" />
+            </div>
+            <div className="pt-2 border-t border-[#f0eee6] flex justify-between items-center">
+              <div className="h-6 w-24 bg-[#e5e3dc]/80 rounded" />
+              <div className="h-3 w-8 bg-[#e5e3dc]/50 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Aggregate dynamic metrics from live vouchers strictly
   const salesTotal = vouchers
     .filter(v => v.voucher_type === 'sales_bill')
     .reduce((acc, v) => acc + (v.total_amount || 0), 0);
@@ -66,19 +95,32 @@ export default function MetricsGrid({ vouchers, onSelectMetric }: MetricsGridPro
     .filter(v => v.voucher_type === 'payment')
     .reduce((acc, v) => acc + (v.total_amount || 0), 0);
 
-  // Bank & Cash Balance calculations (sample baseline + ledger mutations)
-  const bankBalance = 4852400 + receiptTotal - paymentTotal;
-  const cashBalance = 348500;
+  // Bank & Cash Balance calculations purely from recorded cash/bank transactions
+  const bankBalance = vouchers
+    .filter(v => v.payment_mode === 'bank' || v.payment_mode === 'cheque' || v.payment_mode === 'upi')
+    .reduce((acc, v) => {
+      if (v.voucher_type === 'receipt') return acc + (v.total_amount || 0);
+      if (v.voucher_type === 'payment') return acc - (v.total_amount || 0);
+      return acc;
+    }, 0);
+
+  const cashBalance = vouchers
+    .filter(v => v.payment_mode === 'cash')
+    .reduce((acc, v) => {
+      if (v.voucher_type === 'receipt') return acc + (v.total_amount || 0);
+      if (v.voucher_type === 'payment') return acc - (v.total_amount || 0);
+      return acc;
+    }, 0);
 
   const metrics: MetricItem[] = [
     {
       id: 'sales',
       title: 'Sales',
       subtitle: 'Total B2B & Tax Invoices',
-      amount: salesTotal || 1248000,
+      amount: salesTotal,
       icon: TrendingUp,
       accentColor: 'text-emerald-700 bg-emerald-100',
-      badgeText: '+14.2% YoY',
+      badgeText: 'Sales Revenue',
       badgeBg: 'bg-emerald-100 text-emerald-800',
       route: '/dashboard?filter=sales'
     },
@@ -86,10 +128,10 @@ export default function MetricsGrid({ vouchers, onSelectMetric }: MetricsGridPro
       id: 'receivables',
       title: 'Receivables',
       subtitle: 'Customer Dues to Collect',
-      amount: receivablesTotal || 842000,
+      amount: receivablesTotal,
       icon: ArrowDownLeft,
       accentColor: 'text-emerald-700 bg-emerald-100',
-      badgeText: 'Due Now',
+      badgeText: 'Pending Inflow',
       badgeBg: 'bg-amber-100 text-amber-800',
       route: '/dashboard/reports?tab=receivables'
     },
@@ -97,7 +139,7 @@ export default function MetricsGrid({ vouchers, onSelectMetric }: MetricsGridPro
       id: 'purchase',
       title: 'Purchase',
       subtitle: 'Vendor Procurement & Orders',
-      amount: purchaseTotal || 795400,
+      amount: purchaseTotal,
       icon: ShoppingCart,
       accentColor: 'text-emerald-700 bg-emerald-100',
       badgeText: 'Procurement',
@@ -108,10 +150,10 @@ export default function MetricsGrid({ vouchers, onSelectMetric }: MetricsGridPro
       id: 'payables',
       title: 'Payables',
       subtitle: 'Pending Vendor Bills',
-      amount: payablesTotal || 412000,
+      amount: payablesTotal,
       icon: ArrowUpRight,
       accentColor: 'text-emerald-700 bg-emerald-100',
-      badgeText: 'Pending Pay',
+      badgeText: 'Pending Outflow',
       badgeBg: 'bg-rose-100 text-rose-800',
       route: '/dashboard/reports?tab=payables'
     },
@@ -119,7 +161,7 @@ export default function MetricsGrid({ vouchers, onSelectMetric }: MetricsGridPro
       id: 'receipt',
       title: 'Receipt',
       subtitle: 'Customer Payments Inflow',
-      amount: receiptTotal || 620000,
+      amount: receiptTotal,
       icon: Receipt,
       accentColor: 'text-emerald-700 bg-emerald-100',
       badgeText: 'Collections',
@@ -130,7 +172,7 @@ export default function MetricsGrid({ vouchers, onSelectMetric }: MetricsGridPro
       id: 'payment',
       title: 'Payment',
       subtitle: 'Vendor & Expense Outflows',
-      amount: paymentTotal || 340000,
+      amount: paymentTotal,
       icon: CreditCard,
       accentColor: 'text-emerald-700 bg-emerald-100',
       badgeText: 'Expenses',
@@ -140,22 +182,22 @@ export default function MetricsGrid({ vouchers, onSelectMetric }: MetricsGridPro
     {
       id: 'bank',
       title: 'Bank',
-      subtitle: 'Live HDFC & SBI Accounts',
+      subtitle: 'Net Bank Transactions',
       amount: bankBalance,
       icon: Building,
       accentColor: 'text-emerald-700 bg-emerald-100',
-      badgeText: '3 Accounts',
+      badgeText: 'Live Ledgers',
       badgeBg: 'bg-emerald-100 text-emerald-800',
       route: '/dashboard/reports?tab=ledgers'
     },
     {
       id: 'cash',
       title: 'Cash',
-      subtitle: 'Cash in Hand & Petty Cash',
+      subtitle: 'Net Cash In Hand',
       amount: cashBalance,
       icon: Banknote,
       accentColor: 'text-emerald-700 bg-emerald-100',
-      badgeText: 'Petty Cash',
+      badgeText: 'Cash Register',
       badgeBg: 'bg-emerald-100 text-emerald-800',
       route: '/dashboard/reports?tab=ledgers'
     }

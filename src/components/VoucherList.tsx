@@ -26,6 +26,7 @@ import {
 interface VoucherListProps {
   vouchers: Voucher[];
   activeRole: UserRole;
+  isLoading?: boolean;
   onSelectVoucher: (voucher: Voucher) => void;
   onUpdateStatus: (id: string, status: PaymentStatus) => void;
   onGenerateIrn: (id: string) => void;
@@ -37,6 +38,7 @@ interface VoucherListProps {
 export default function VoucherList({
   vouchers,
   activeRole,
+  isLoading = false,
   onSelectVoucher,
   onUpdateStatus,
   onGenerateIrn,
@@ -133,99 +135,171 @@ export default function VoucherList({
         </div>
       </div>
 
-      {/* ================= MOBILE VIEW: TOUCH-FRIENDLY CARD STACK (< 768px) ================= */}
-      <div className="md:hidden space-y-3">
-        {filteredVouchers.map((voucher) => (
-          <div
-            key={voucher.id}
-            onClick={() => onSelectVoucher(voucher)}
-            className="p-4 rounded-[24px] bg-[#fafaf8] border border-[#e5e3dc] cursor-pointer space-y-3 relative active:scale-[0.99] transition"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <span className="text-[11px] font-bold text-[#232528] bg-[#f6f5f0] px-2.5 py-1 rounded-full">
-                  {voucher.voucher_number}
-                </span>
-                <h4 className="font-extrabold text-sm text-[#232528] mt-2 line-clamp-1">{voucher.party_name}</h4>
-                <div className="text-[11px] text-[#88898b] font-mono mt-0.5">GST: {voucher.party_gstin || 'Unregistered'}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-base font-black text-[#232528] font-mono">
-                  ₹{voucher.total_amount.toLocaleString('en-IN')}
+      {/* Loading Skeletons */}
+      {isLoading ? (
+        <>
+          {/* Mobile Loading Skeletons */}
+          <div className="flex flex-col space-y-4 md:hidden">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="p-4 rounded-[24px] bg-[#fafaf8] border border-[#e5e3dc] animate-pulse space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-[#e5e3dc] rounded-full"></div>
+                    <div className="h-5 w-40 bg-[#e5e3dc] rounded-md"></div>
+                    <div className="h-3 w-28 bg-[#e5e3dc] rounded-full"></div>
+                  </div>
+                  <div className="space-y-2 text-right">
+                    <div className="h-6 w-20 bg-[#e5e3dc] rounded-md ml-auto"></div>
+                    <div className="h-3 w-14 bg-[#e5e3dc] rounded-full ml-auto"></div>
+                  </div>
                 </div>
-                <div className="text-[10px] text-[#88898b]">Tax: ₹{voucher.tax_amount?.toLocaleString('en-IN') || 0}</div>
+                <div className="pt-2 border-t border-[#efeee9] flex justify-between items-center">
+                  <div className="h-6 w-24 bg-[#e5e3dc] rounded-full"></div>
+                  <div className="h-8 w-20 bg-[#e5e3dc] rounded-full"></div>
+                </div>
               </div>
-            </div>
+            ))}
+          </div>
 
-            <div className="pt-2 border-t border-[#efeee9] flex items-center justify-between text-xs">
-              <div>{getStatusBadge(voucher.status)}</div>
-
-              <div className="flex items-center space-x-1.5" onClick={(e) => e.stopPropagation()}>
-                {onEditVoucher && (
-                  <button
-                    onClick={() => onEditVoucher(voucher)}
-                    title="Edit Voucher"
-                    className="p-2 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] rounded-full transition btn-pill"
-                  >
-                    <Edit3 className="h-3.5 w-3.5 text-[#88898b]" />
-                  </button>
-                )}
-
-                {onDeleteVoucher && (activeRole === 'admin' || activeRole === 'manager' || activeRole === 'checker') && (
-                  <button
-                    onClick={() => {
-                      if (window.confirm(`Delete voucher ${voucher.voucher_number}?`)) {
-                        onDeleteVoucher(voucher.id);
-                      }
-                    }}
-                    title="Delete Voucher"
-                    className="p-2 bg-[#fbeaea] hover:bg-[#f7d6d6] text-[#b91c1c] rounded-full transition btn-pill"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-
-                <button
-                  onClick={(e) => handleWhatsAppShare(e, voucher)}
-                  className="min-h-[36px] px-3 py-1.5 bg-[#D2DEC9] text-[#2b3e24] font-bold rounded-full text-xs flex items-center gap-1 btn-pill"
-                >
-                  <Share2 className="h-3.5 w-3.5" /> WhatsApp
-                </button>
-
-                {(activeRole === 'checker' || activeRole === 'admin') && voucher.status === 'pending' && (
-                  <button
-                    onClick={() => onUpdateStatus(voucher.id, 'approved')}
-                    className="min-h-[36px] px-4 py-1.5 bg-[#f5ba41] hover:bg-[#e6ab33] text-[#232528] font-bold rounded-full text-xs btn-pill"
-                  >
-                    Approve
-                  </button>
-                )}
-              </div>
+          {/* Desktop Loading Skeletons */}
+          <div className="hidden md:block rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] overflow-hidden">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#e5e3dc] bg-[#f6f5f0] text-[11px] font-extrabold uppercase tracking-wider text-[#88898b]">
+                    <th className="py-4 px-6">Voucher No</th>
+                    <th className="py-4 px-6">Party / Customer</th>
+                    <th className="py-4 px-6">Type</th>
+                    <th className="py-4 px-6 text-right">Tax (GST)</th>
+                    <th className="py-4 px-6 text-right">Total Amount</th>
+                    <th className="py-4 px-6 text-center">Status</th>
+                    <th className="py-4 px-6 text-center">E-Invoice IRN</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#efeee9] text-xs">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="py-4 px-6"><div className="h-4 w-20 bg-[#e5e3dc] rounded-full"></div></td>
+                      <td className="py-4 px-6 space-y-1.5"><div className="h-4 w-36 bg-[#e5e3dc] rounded"></div><div className="h-3 w-24 bg-[#e5e3dc] rounded-full"></div></td>
+                      <td className="py-4 px-6"><div className="h-5 w-20 bg-[#e5e3dc] rounded-full"></div></td>
+                      <td className="py-4 px-6 text-right"><div className="h-4 w-16 bg-[#e5e3dc] rounded ml-auto"></div></td>
+                      <td className="py-4 px-6 text-right"><div className="h-5 w-24 bg-[#e5e3dc] rounded ml-auto"></div></td>
+                      <td className="py-4 px-6 text-center"><div className="h-6 w-20 bg-[#e5e3dc] rounded-full mx-auto"></div></td>
+                      <td className="py-4 px-6 text-center"><div className="h-6 w-20 bg-[#e5e3dc] rounded-full mx-auto"></div></td>
+                      <td className="py-4 px-6 text-right"><div className="h-8 w-24 bg-[#e5e3dc] rounded-full ml-auto"></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        ))}
-      </div>
+        </>
+      ) : filteredVouchers.length === 0 ? (
+        <div className="p-12 text-center rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc]">
+          <FileText className="h-10 w-10 text-[#88898b] mx-auto mb-3 opacity-40" />
+          <h3 className="text-base font-bold text-[#232528]">No Vouchers Found</h3>
+          <p className="text-xs text-[#88898b] mt-1 max-w-sm mx-auto">
+            {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
+              ? 'No records match your active search or filters. Try resetting filters.'
+              : 'No accounting vouchers are recorded yet. Create a voucher to get started.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* ================= MOBILE VIEW: TOUCH-FRIENDLY CARD STACK (< 768px) ================= */}
+          <div className="flex flex-col space-y-4 md:hidden">
+            {filteredVouchers.map((voucher) => (
+              <div
+                key={voucher.id}
+                onClick={() => onSelectVoucher(voucher)}
+                className="p-4 rounded-[24px] bg-[#fafaf8] border border-[#e5e3dc] cursor-pointer space-y-3 relative active:scale-[0.99] transition"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] font-bold text-[#232528] bg-[#f6f5f0] px-2.5 py-1 rounded-full">
+                      {voucher.voucher_number}
+                    </span>
+                    <h4 className="font-extrabold text-sm text-[#232528] mt-2 line-clamp-1">{voucher.party_name}</h4>
+                    <div className="text-[11px] text-[#88898b] font-mono mt-0.5">GST: {voucher.party_gstin || 'Unregistered'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-base font-black text-[#232528] font-mono">
+                      ₹{voucher.total_amount.toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[10px] text-[#88898b]">Tax: ₹{voucher.tax_amount?.toLocaleString('en-IN') || 0}</div>
+                  </div>
+                </div>
 
-      {/* ================= DESKTOP VIEW: TABULAR LIST (>= 768px) ================= */}
-      <div className="hidden md:block rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-[#e5e3dc] bg-[#f6f5f0] text-[11px] font-extrabold uppercase tracking-wider text-[#88898b]">
-                <th className="py-4 px-6">Voucher No</th>
-                <th className="py-4 px-6">Party / Customer</th>
-                <th className="py-4 px-6">Type</th>
-                <th className="py-4 px-6 text-right">Tax (GST)</th>
-                <th className="py-4 px-6 text-right">Total Amount</th>
-                <th className="py-4 px-6 text-center">Status</th>
-                <th className="py-4 px-6 text-center">E-Invoice IRN</th>
-                <th className="py-4 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#efeee9] text-xs">
-              {filteredVouchers.map((voucher) => (
-                <tr
-                  key={voucher.id}
+                <div className="pt-2 border-t border-[#efeee9] flex items-center justify-between text-xs">
+                  <div>{getStatusBadge(voucher.status)}</div>
+
+                  <div className="flex items-center space-x-1.5" onClick={(e) => e.stopPropagation()}>
+                    {onEditVoucher && (
+                      <button
+                        onClick={() => onEditVoucher(voucher)}
+                        title="Edit Voucher"
+                        className="p-2 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] rounded-full transition btn-pill"
+                      >
+                        <Edit3 className="h-3.5 w-3.5 text-[#88898b]" />
+                      </button>
+                    )}
+
+                    {onDeleteVoucher && (activeRole === 'admin' || activeRole === 'manager' || activeRole === 'checker') && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Delete voucher ${voucher.voucher_number}?`)) {
+                            onDeleteVoucher(voucher.id);
+                          }
+                        }}
+                        title="Delete Voucher"
+                        className="p-2 bg-[#fbeaea] hover:bg-[#f7d6d6] text-[#b91c1c] rounded-full transition btn-pill"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+
+                    <button
+                      onClick={(e) => handleWhatsAppShare(e, voucher)}
+                      className="min-h-[36px] px-3 py-1.5 bg-[#D2DEC9] text-[#2b3e24] font-bold rounded-full text-xs flex items-center gap-1 btn-pill"
+                    >
+                      <Share2 className="h-3.5 w-3.5" /> WhatsApp
+                    </button>
+
+                    {(activeRole === 'checker' || activeRole === 'admin') && voucher.status === 'pending' && (
+                      <button
+                        onClick={() => onUpdateStatus(voucher.id, 'approved')}
+                        className="min-h-[36px] px-4 py-1.5 bg-[#f5ba41] hover:bg-[#e6ab33] text-[#232528] font-bold rounded-full text-xs btn-pill"
+                      >
+                        Approve
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ================= DESKTOP VIEW: TABULAR LIST (>= 768px) ================= */}
+          <div className="hidden md:block rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] overflow-hidden">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#e5e3dc] bg-[#f6f5f0] text-[11px] font-extrabold uppercase tracking-wider text-[#88898b]">
+                    <th className="py-4 px-6">Voucher No</th>
+                    <th className="py-4 px-6">Party / Customer</th>
+                    <th className="py-4 px-6">Type</th>
+                    <th className="py-4 px-6 text-right">Tax (GST)</th>
+                    <th className="py-4 px-6 text-right">Total Amount</th>
+                    <th className="py-4 px-6 text-center">Status</th>
+                    <th className="py-4 px-6 text-center">E-Invoice IRN</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#efeee9] text-xs">
+                  {filteredVouchers.map((voucher) => (
+                    <tr
+                      key={voucher.id}
                   onClick={() => onSelectVoucher(voucher)}
                   className="hover:bg-[#f6f5f0]/80 cursor-pointer transition"
                 >
@@ -315,6 +389,8 @@ export default function VoucherList({
           </table>
         </div>
       </div>
-    </div>
-  );
+    </>
+  )}
+</div>
+);
 }

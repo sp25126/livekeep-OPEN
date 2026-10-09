@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Voucher, VoucherType, UserRole, PaymentStatus } from '@/types/database';
-import sampleData from '@/data/sample_invoices.json';
 import confetti from 'canvas-confetti';
 import { queueOfflineVoucher } from '@/lib/services/offlineSync';
 import { calculateInvoiceTaxes } from '@/lib/billing/taxEngine';
@@ -31,6 +30,7 @@ import {
 
 export default function Dashboard() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeRole, setActiveRole] = useState<UserRole>('admin');
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('vouchers');
@@ -124,27 +124,25 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    // Load initial mock data
-    const initialVouchers: Voucher[] = sampleData.invoices.map((inv, idx) => ({
-      id: `mock-${idx + 1}`,
-      organization_id: 'org-101',
-      voucher_number: inv.voucher_number,
-      voucher_type: inv.voucher_type as any,
-      party_name: inv.party_details.party_name,
-      party_gstin: inv.party_details.party_gstin,
-      billing_address: inv.party_details.billing_address,
-      place_of_supply: inv.party_details.place_of_supply,
-      total_amount: inv.summary.grand_total,
-      tax_amount: inv.summary.total_tax,
-      status: inv.summary.status as PaymentStatus,
-      irn_number: inv.compliance.irn && !inv.compliance.irn.includes('Pending') ? inv.compliance.irn : undefined,
-      eway_bill_no: inv.compliance.eway_bill_no || undefined,
-      items: inv.items,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
+    async function fetchLiveVouchers() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('vouchers')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-    setVouchers(initialVouchers);
+        if (!error && data) {
+          setVouchers(data as Voucher[]);
+        }
+      } catch (err) {
+        console.error('Failed to load live vouchers from Supabase:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchLiveVouchers();
 
     // Subscribe to Supabase Realtime for Vouchers
     const channel = supabase
@@ -159,6 +157,8 @@ export default function Dashboard() {
             setVouchers((prev) =>
               prev.map((v) => (v.id === payload.new.id ? (payload.new as Voucher) : v))
             );
+          } else if (payload.eventType === 'DELETE') {
+            setVouchers((prev) => prev.filter((v) => v.id !== (payload.old as Voucher).id));
           }
         }
       )
@@ -603,6 +603,7 @@ export default function Dashboard() {
           </div>
           <MetricsGrid
             vouchers={vouchers}
+            isLoading={isLoading}
             onSelectMetric={(id) => {
               if (id === 'receivables' || id === 'payables' || id === 'bank' || id === 'cash') {
                 setActiveTab('reports');
@@ -618,6 +619,7 @@ export default function Dashboard() {
           <VoucherList
             vouchers={vouchers}
             activeRole={activeRole}
+            isLoading={isLoading}
             onSelectVoucher={(v) => setSelectedVoucher(v)}
             onUpdateStatus={handleUpdateStatus}
             onGenerateIrn={handleGenerateIrn}

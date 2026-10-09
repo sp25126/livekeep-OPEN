@@ -18,7 +18,8 @@ import {
   Sparkles,
   Lock,
   Package,
-  UserX
+  UserX,
+  KeyRound
 } from 'lucide-react';
 import { useSecurity } from '@/context/SecurityContext';
 
@@ -82,6 +83,15 @@ export default function Navigation({
       subtitle: 'Team Access & Permissions',
       href: '/dashboard/users',
       icon: Users,
+      roles: ['admin'],
+      badge: 'Admin'
+    },
+    {
+      id: 'settings',
+      name: 'Security Settings',
+      subtitle: 'Admin Password Reset',
+      href: '/dashboard/settings',
+      icon: KeyRound,
       roles: ['admin'],
       badge: 'Admin'
     }

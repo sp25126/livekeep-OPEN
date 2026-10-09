@@ -3,49 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { AppUser, UserRole } from '@/types/database';
 import { logSecurityEvent } from '@/lib/services/auditLogger';
 
-// Sample initial mock users for local session resilience
-const mockUsersList: AppUser[] = [
-  {
-    id: 'user-001',
-    email: 'admin@livekeeping.open',
-    full_name: 'Saumya Patel',
-    role: 'admin',
-    organization_id: 'org-101',
-    created_at: '2026-01-15T10:00:00.000Z',
-    last_sign_in_at: '2026-10-08T12:30:00.000Z',
-    status: 'active'
-  },
-  {
-    id: 'user-002',
-    email: 'checker.accounts@livekeeping.open',
-    full_name: 'Vikram Mehta (Senior Auditor)',
-    role: 'checker',
-    organization_id: 'org-101',
-    created_at: '2026-02-01T11:20:00.000Z',
-    last_sign_in_at: '2026-10-08T11:15:00.000Z',
-    status: 'active'
-  },
-  {
-    id: 'user-003',
-    email: 'maker.sales1@livekeeping.open',
-    full_name: 'Pooja Sharma (Field Sales Lead)',
-    role: 'maker',
-    organization_id: 'org-101',
-    created_at: '2026-03-10T09:45:00.000Z',
-    last_sign_in_at: '2026-10-07T16:50:00.000Z',
-    status: 'active'
-  },
-  {
-    id: 'user-004',
-    email: 'manager.ops@livekeeping.open',
-    full_name: 'Rajesh Nair (Operations Manager)',
-    role: 'manager',
-    organization_id: 'org-101',
-    created_at: '2026-04-05T14:10:00.000Z',
-    last_sign_in_at: '2026-10-06T18:00:00.000Z',
-    status: 'active'
-  }
-];
+const mockUsersList: AppUser[] = [];
 
 // Helper to verify admin authorization
 async function verifyAdminAuth(request: NextRequest): Promise<boolean> {

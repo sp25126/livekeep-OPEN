@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Receipt, CreditCard, CheckCircle2, Calendar, FileText } from 'lucide-react';
 import { Voucher } from '@/types/database';
+import { supabase } from '@/lib/supabase';
 
 interface CashFlowFormProps {
   voucherType: 'receipt' | 'payment';
@@ -10,20 +11,15 @@ interface CashFlowFormProps {
   onCancel: () => void;
 }
 
-const SAMPLE_PENDING_INVOICES = [
-  { no: 'INV/2026-27/001', party: 'Reliance Logistics Ltd', due: 28500 },
-  { no: 'INV/2026-27/002', party: 'Tata Motors Commercial Ltd', due: 142000 },
-  { no: 'INV/2026-27/003', party: 'Apex Industries LLP', due: 54000 },
-  { no: 'INV/2026-27/004', party: 'Adani Ports & SEZ', due: 96000 }
-];
-
 export default function CashFlowForm({ voucherType, onSubmit, onCancel }: CashFlowFormProps) {
   const isReceipt = voucherType === 'receipt';
-  const [partyName, setPartyName] = useState(SAMPLE_PENDING_INVOICES[0].party);
-  const [amount, setAmount] = useState(String(SAMPLE_PENDING_INVOICES[0].due));
-  const [againstInvoiceRef, setAgainstInvoiceRef] = useState(SAMPLE_PENDING_INVOICES[0].no);
+  const [pendingInvoices, setPendingInvoices] = useState<Array<{ no: string; party: string; due: number }>>([]);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
+  const [partyName, setPartyName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [againstInvoiceRef, setAgainstInvoiceRef] = useState('');
   const [paymentMode, setPaymentMode] = useState<'bank' | 'cash' | 'cheque' | 'upi'>('bank');
-  const [instrumentNo, setInstrumentNo] = useState('UTR-99882201');
+  const [instrumentNo, setInstrumentNo] = useState('');
   const [voucherDate, setVoucherDate] = useState('2026-04-09');
   const [bankLedger, setBankLedger] = useState('HDFC Bank Account - 9912');
   const [narration, setNarration] = useState(
@@ -32,9 +28,39 @@ export default function CashFlowForm({ voucherType, onSubmit, onCancel }: CashFl
       : 'Vendor payout released via RTGS / NEFT'
   );
 
+  useEffect(() => {
+    async function fetchPendingInvoices() {
+      setIsLoadingInvoices(true);
+      try {
+        const { data, error } = await supabase
+          .from('vouchers')
+          .select('voucher_number, party_name, total_amount')
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (!error && data && data.length > 0) {
+          const mapped = data.map((v) => ({
+            no: v.voucher_number,
+            party: v.party_name,
+            due: v.total_amount
+          }));
+          setPendingInvoices(mapped);
+          setPartyName(mapped[0].party);
+          setAmount(String(mapped[0].due));
+          setAgainstInvoiceRef(mapped[0].no);
+        }
+      } catch (err) {
+        console.error('Failed to query pending invoices:', err);
+      } finally {
+        setIsLoadingInvoices(false);
+      }
+    }
+    fetchPendingInvoices();
+  }, []);
+
   const handleInvoiceSelect = (invNo: string) => {
     setAgainstInvoiceRef(invNo);
-    const selected = SAMPLE_PENDING_INVOICES.find(i => i.no === invNo);
+    const selected = pendingInvoices.find((i) => i.no === invNo);
     if (selected) {
       setPartyName(selected.party);
       setAmount(String(selected.due));
@@ -77,24 +103,37 @@ export default function CashFlowForm({ voucherType, onSubmit, onCancel }: CashFl
           Settlement Against Invoice (Optional / 1-Click Match)
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 bg-[#f6f5f0] rounded-2xl">
-          {SAMPLE_PENDING_INVOICES.map((inv) => (
-            <button
-              type="button"
-              key={inv.no}
-              onClick={() => handleInvoiceSelect(inv.no)}
-              className={`p-2 rounded-xl text-left text-xs transition border flex items-center justify-between ${
-                againstInvoiceRef === inv.no
-                  ? 'bg-[#232528] text-white border-[#232528]'
-                  : 'bg-white border-[#e5e3dc] text-[#555] hover:border-[#f5ba41]'
-              }`}
-            >
-              <div>
-                <div className="font-bold text-[11px] truncate max-w-[140px]">{inv.party}</div>
-                <div className="text-[10px] opacity-75 font-mono">{inv.no}</div>
+          {isLoadingInvoices ? (
+            [1, 2].map((i) => (
+              <div key={i} className="p-2.5 rounded-xl bg-white border border-[#e5e3dc] animate-pulse space-y-1.5">
+                <div className="h-3 w-28 bg-[#e5e3dc] rounded"></div>
+                <div className="h-2.5 w-16 bg-[#e5e3dc] rounded"></div>
               </div>
-              <span className="font-bold text-[11px] font-mono">₹{inv.due.toLocaleString('en-IN')}</span>
-            </button>
-          ))}
+            ))
+          ) : pendingInvoices.length === 0 ? (
+            <div className="col-span-full py-2 text-center text-[11px] text-[#88898b]">
+              No pending invoices to match. Enter party details manually below.
+            </div>
+          ) : (
+            pendingInvoices.map((inv) => (
+              <button
+                type="button"
+                key={inv.no}
+                onClick={() => handleInvoiceSelect(inv.no)}
+                className={`p-2 rounded-xl text-left text-xs transition border flex items-center justify-between ${
+                  againstInvoiceRef === inv.no
+                    ? 'bg-[#232528] text-white border-[#232528]'
+                    : 'bg-white border-[#e5e3dc] text-[#555] hover:border-[#f5ba41]'
+                }`}
+              >
+                <div>
+                  <div className="font-bold text-[11px] truncate max-w-[140px]">{inv.party}</div>
+                  <div className="text-[10px] opacity-75 font-mono">{inv.no}</div>
+                </div>
+                <span className="font-bold text-[11px] font-mono">₹{inv.due.toLocaleString('en-IN')}</span>
+              </button>
+            ))
+          )}
         </div>
       </div>
 

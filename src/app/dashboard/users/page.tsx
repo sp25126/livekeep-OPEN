@@ -331,7 +331,7 @@ export default function UserManagementPage() {
           </div>
 
           {/* Table Body */}
-          <div className="overflow-x-auto flex-1">
+          <div className="overflow-x-auto w-full flex-1">
             <table className="w-full text-left text-xs text-[#232528]">
               <thead className="bg-[#f6f5f0] text-[11px] text-[#88898b] font-black uppercase tracking-wider border-b border-[#e5e3dc]">
                 <tr>

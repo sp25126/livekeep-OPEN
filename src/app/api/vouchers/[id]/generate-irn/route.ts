@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import { nicConfig } from '@/lib/services/nic-gst/config';
 import { authenticate, nicEncrypt, nicDecrypt } from '@/lib/services/nic-gst/crypto';
 import { buildInvoicePayload } from '@/lib/services/nic-gst/payloadBuilder';
-import sampleData from '@/data/sample_invoices.json';
 import { logSecurityEvent } from '@/lib/services/auditLogger';
 
 export async function POST(
@@ -17,57 +16,21 @@ export async function POST(
 
     // 1. Fetch voucher from Supabase
     let voucher: any = null;
-    try {
-      const { data, error } = await supabase
-        .from('vouchers')
-        .select('*')
-        .eq('id', voucherId)
-        .single();
+    const { data, error } = await supabase
+      .from('vouchers')
+      .select('*')
+      .or(`id.eq.${voucherId},voucher_number.eq.${voucherId}`)
+      .maybeSingle();
 
-      if (data && !error) {
-        voucher = data;
-      }
-    } catch (dbErr) {
-      console.log('[NIC IRN] Operating in session mode, querying sample data fallback');
+    if (data && !error) {
+      voucher = data;
     }
 
     if (!voucher) {
-      const found = sampleData.invoices.find(
-        (inv, idx) => inv.voucher_number === voucherId || `mock-${idx + 1}` === voucherId || `v-${idx + 1}` === voucherId
+      return NextResponse.json(
+        { success: false, error: `Voucher '${voucherId}' not found in database.` },
+        { status: 404 }
       );
-
-      if (found) {
-        voucher = {
-          id: voucherId,
-          voucher_number: found.voucher_number,
-          voucher_type: found.voucher_type,
-          party_name: found.party_details.party_name,
-          party_gstin: found.party_details.party_gstin,
-          billing_address: found.party_details.billing_address,
-          place_of_supply: found.party_details.place_of_supply,
-          total_amount: found.summary.grand_total,
-          tax_amount: found.summary.total_tax,
-          status: found.summary.status,
-          items: found.items,
-          created_at: new Date().toISOString()
-        };
-      }
-    }
-
-    if (!voucher) {
-      voucher = {
-        id: voucherId,
-        voucher_number: voucherId.startsWith('INV') ? voucherId : `INV/2026-27/${Date.now().toString().slice(-3)}`,
-        voucher_type: 'sales_bill',
-        party_name: 'Acme Industrial Solutions Pvt Ltd',
-        party_gstin: '24AAACA12341ZV',
-        billing_address: 'Plot 42, GIDC Estate, Vatva, Ahmedabad, Gujarat - 382445',
-        place_of_supply: '24-Gujarat',
-        total_amount: 26550.00,
-        tax_amount: 4050.00,
-        status: 'approved',
-        created_at: new Date().toISOString()
-      };
     }
 
     // 2. Authenticate with NIC IRP

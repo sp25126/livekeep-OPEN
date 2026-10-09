@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { logSecurityEvent } from '@/lib/services/auditLogger';
-import sampleData from '@/data/sample_invoices.json';
 
 export async function GET(
   request: NextRequest,
@@ -48,77 +47,21 @@ export async function GET(
   let voucher: any = null;
 
   // 2. Fetch Voucher from Database
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('vouchers')
-      .select('*')
-      .eq('id', voucherId)
-      .single();
+  const { data, error } = await supabaseAdmin
+    .from('vouchers')
+    .select('*')
+    .or(`id.eq.${voucherId},voucher_number.eq.${voucherId}`)
+    .maybeSingle();
 
-    if (data && !error) {
-      voucher = data;
-    }
-  } catch (e) {
-    console.log('[Secure PDF Engine] Operating with fallback sample store');
+  if (data && !error) {
+    voucher = data;
   }
 
-  // 3. Fallback to mock data if needed
   if (!voucher) {
-    const found = sampleData.invoices.find(
-      (inv, idx) => inv.voucher_number === voucherId || `mock-${idx + 1}` === voucherId || `v-${idx + 1}` === voucherId
+    return NextResponse.json(
+      { error: `Voucher '${voucherId}' not found.` },
+      { status: 404 }
     );
-
-    if (found) {
-      voucher = {
-        id: voucherId,
-        organization_id: 'org-101',
-        voucher_number: found.voucher_number,
-        voucher_type: found.voucher_type,
-        party_name: found.party_details.party_name,
-        party_gstin: found.party_details.party_gstin,
-        billing_address: found.party_details.billing_address,
-        place_of_supply: found.party_details.place_of_supply,
-        total_amount: found.summary.grand_total,
-        tax_amount: found.summary.total_tax,
-        status: found.summary.status,
-        irn_number: found.compliance.irn,
-        eway_bill_no: found.compliance.eway_bill_no,
-        items: found.items,
-        created_at: new Date().toISOString()
-      };
-    }
-  }
-
-  if (!voucher) {
-    voucher = {
-      id: voucherId,
-      organization_id: 'org-101',
-      voucher_number: voucherId || 'INV/2026-27/001',
-      voucher_type: 'sales_bill',
-      party_name: 'Acme Industrial Solutions Pvt Ltd',
-      party_gstin: '24AAACA12341ZV',
-      billing_address: 'Plot 42, GIDC Estate, Vatva, Ahmedabad, Gujarat - 382445',
-      place_of_supply: '24-Gujarat',
-      total_amount: 26550.00,
-      tax_amount: 4050.00,
-      status: 'approved',
-      irn_number: '18a45e908b21c43f761d90212389a0f4c3b21029384756102938475610293847',
-      eway_bill_no: '241098765432',
-      items: [
-        {
-          item_name: 'Industrial Sensor Probe X1',
-          hsn_code: '90318000',
-          quantity: 5,
-          unit_price: 4500.00,
-          tax_rate: 18,
-          cgst_amount: 2025.00,
-          sgst_amount: 2025.00,
-          igst_amount: 0.00,
-          total_item_amount: 26550.00
-        }
-      ],
-      created_at: new Date().toISOString()
-    };
   }
 
   const items = voucher.items || [

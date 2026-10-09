@@ -24,107 +24,9 @@ import {
   ShieldAlert
 } from 'lucide-react';
 
-const INITIAL_INVENTORY: InventoryItem[] = [
-  {
-    id: 'inv-1',
-    organization_id: 'org-101',
-    item_name: 'Industrial High-Pressure Gate Valve (3-Inch)',
-    sku: 'VALVE-GP-3IN',
-    stock_group: 'Industrial Hardware',
-    unit: 'Nos',
-    closing_quantity: 45,
-    opening_quantity: 50,
-    base_rate: 4250,
-    closing_value: 191250,
-    hsn_code: '84818030',
-    reorder_level: 15,
-    negative_stock_allowed: true,
-    last_synced_at: new Date().toISOString()
-  },
-  {
-    id: 'inv-2',
-    organization_id: 'org-101',
-    item_name: 'Stainless Steel Flange Bolt Set (M16 x 65mm)',
-    sku: 'BOLT-SS-M16',
-    stock_group: 'Fasteners & Fittings',
-    unit: 'Boxes',
-    closing_quantity: -12, // Negative stock item!
-    opening_quantity: 20,
-    base_rate: 850,
-    closing_value: -10200,
-    hsn_code: '73181500',
-    reorder_level: 25,
-    negative_stock_allowed: true,
-    last_synced_at: new Date().toISOString()
-  },
-  {
-    id: 'inv-3',
-    organization_id: 'org-101',
-    item_name: 'Heavy Duty Pneumatic Actuator (Model X-200)',
-    sku: 'ACT-PN-X200',
-    stock_group: 'Industrial Hardware',
-    unit: 'Nos',
-    closing_quantity: 8,
-    opening_quantity: 12,
-    base_rate: 18500,
-    closing_value: 148000,
-    hsn_code: '84123100',
-    reorder_level: 10, // Low stock
-    negative_stock_allowed: false,
-    last_synced_at: new Date().toISOString()
-  },
-  {
-    id: 'inv-4',
-    organization_id: 'org-101',
-    item_name: 'PTFE Spiral Wound Gasket (ANSI 150#)',
-    sku: 'GSK-PTFE-150',
-    stock_group: 'Seals & Gaskets',
-    unit: 'Pcs',
-    closing_quantity: 0, // Out of stock
-    opening_quantity: 100,
-    base_rate: 340,
-    closing_value: 0,
-    hsn_code: '84841000',
-    reorder_level: 30,
-    negative_stock_allowed: true,
-    last_synced_at: new Date().toISOString()
-  },
-  {
-    id: 'inv-5',
-    organization_id: 'org-101',
-    item_name: 'Alloy Seamless Pipe (Sch 40 - 2.5 Inch)',
-    sku: 'PIPE-ALLOY-40',
-    stock_group: 'Raw Materials',
-    unit: 'Mtrs',
-    closing_quantity: 180,
-    opening_quantity: 200,
-    base_rate: 1250,
-    closing_value: 225000,
-    hsn_code: '73041910',
-    reorder_level: 50,
-    negative_stock_allowed: false,
-    last_synced_at: new Date().toISOString()
-  },
-  {
-    id: 'inv-6',
-    organization_id: 'org-101',
-    item_name: 'Hydraulic Seal Kit (Double Acting Nitrile)',
-    sku: 'SEAL-HYD-DAN',
-    stock_group: 'Seals & Gaskets',
-    unit: 'Kits',
-    closing_quantity: -4, // Negative stock item!
-    opening_quantity: 10,
-    base_rate: 1650,
-    closing_value: -6600,
-    hsn_code: '40169320',
-    reorder_level: 15,
-    negative_stock_allowed: true,
-    last_synced_at: new Date().toISOString()
-  }
-];
-
 export default function InventoryPage() {
-  const [items, setItems] = useState<InventoryItem[]>(INITIAL_INVENTORY);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'in_stock' | 'out_of_stock' | 'negative_stock' | 'low_stock'>('all');
   const [groupFilter, setGroupFilter] = useState<string>('all');
@@ -148,13 +50,16 @@ export default function InventoryPage() {
 
   useEffect(() => {
     async function loadFromDb() {
+      setIsLoading(true);
       try {
-        const { data, error } = await supabase.from('inventory_items').select('*');
-        if (!error && data && data.length > 0) {
+        const { data, error } = await supabase.from('inventory_items').select('*').order('created_at', { ascending: false });
+        if (!error && data) {
           setItems(data as InventoryItem[]);
         }
       } catch (e) {
-        console.log('Using local inventory data:', e);
+        console.error('Failed to load live inventory data:', e);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadFromDb();
@@ -289,65 +194,77 @@ export default function InventoryPage() {
         </header>
 
         {/* Top Metric Pastel Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {/* Card 1: Total Valuation */}
-          <div className="p-4 sm:p-5 rounded-[28px] bg-[#d2dec9] text-[#24351e] shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between text-[#24351e]/80 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Total Valuation</span>
-                <span className="p-1 rounded-full bg-[#bccbb2] text-[#24351e]">
-                  <IndianRupee className="h-3.5 w-3.5" />
-                </span>
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="p-4 sm:p-5 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] animate-pulse space-y-2">
+                <div className="h-3 w-20 bg-[#e5e3dc] rounded-full"></div>
+                <div className="h-7 w-28 bg-[#e5e3dc] rounded-md"></div>
+                <div className="h-3 w-24 bg-[#e5e3dc] rounded-full"></div>
               </div>
-              <div className="text-lg sm:text-2xl font-black font-mono mt-1">
-                ₹{totalValuation.toLocaleString('en-IN')}
-              </div>
-              <div className="text-[10px] text-[#24351e]/80 mt-1 font-bold">{items.length} Active Stock Items</div>
-            </div>
+            ))}
           </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {/* Card 1: Total Valuation */}
+            <div className="p-4 sm:p-5 rounded-[28px] bg-[#d2dec9] text-[#24351e] shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-[#24351e]/80 mb-1">
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Total Valuation</span>
+                  <span className="p-1 rounded-full bg-[#bccbb2] text-[#24351e]">
+                    <IndianRupee className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+                <div className="text-lg sm:text-2xl font-black font-mono mt-1">
+                  ₹{totalValuation.toLocaleString('en-IN')}
+                </div>
+                <div className="text-[10px] text-[#24351e]/80 mt-1 font-bold">{items.length} Active Stock Items</div>
+              </div>
+            </div>
 
-          {/* Card 2: Negative Stock Alerts (Urgent) */}
-          <div className="p-4 sm:p-5 rounded-[28px] bg-[#fbeaea] text-[#b91c1c] shadow-sm relative overflow-hidden flex flex-col justify-between border border-rose-200">
-            <div>
-              <div className="flex items-center justify-between text-[#b91c1c]/80 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Negative Stock</span>
-                <span className="p-1 rounded-full bg-rose-200 text-[#b91c1c]">
-                  <ShieldAlert className="h-3.5 w-3.5" />
-                </span>
+            {/* Card 2: Negative Stock Alerts (Urgent) */}
+            <div className="p-4 sm:p-5 rounded-[28px] bg-[#fbeaea] text-[#b91c1c] shadow-sm relative overflow-hidden flex flex-col justify-between border border-rose-200">
+              <div>
+                <div className="flex items-center justify-between text-[#b91c1c]/80 mb-1">
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Negative Stock</span>
+                  <span className="p-1 rounded-full bg-rose-200 text-[#b91c1c]">
+                    <ShieldAlert className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+                <div className="text-lg sm:text-2xl font-black font-mono mt-1">{negativeStockCount}</div>
+                <div className="text-[10px] text-[#b91c1c] mt-1 font-bold">Oversold / Unbilled Inflows</div>
               </div>
-              <div className="text-lg sm:text-2xl font-black font-mono mt-1">{negativeStockCount}</div>
-              <div className="text-[10px] text-[#b91c1c] mt-1 font-bold">Oversold / Unbilled Inflows</div>
             </div>
-          </div>
 
-          {/* Card 3: Out of Stock */}
-          <div className="p-4 sm:p-5 rounded-[28px] bg-[#fbe29d] text-[#4d3809] shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between text-[#4d3809]/80 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Out of Stock</span>
-                <span className="p-1 rounded-full bg-[#e8cd84] text-[#4d3809]">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                </span>
+            {/* Card 3: Out of Stock */}
+            <div className="p-4 sm:p-5 rounded-[28px] bg-[#fbe29d] text-[#4d3809] shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-[#4d3809]/80 mb-1">
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Out of Stock</span>
+                  <span className="p-1 rounded-full bg-[#e8cd84] text-[#4d3809]">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+                <div className="text-lg sm:text-2xl font-black font-mono mt-1">{outOfStockCount}</div>
+                <div className="text-[10px] text-[#4d3809]/80 mt-1 font-bold">Zero Balance Items</div>
               </div>
-              <div className="text-lg sm:text-2xl font-black font-mono mt-1">{outOfStockCount}</div>
-              <div className="text-[10px] text-[#4d3809]/80 mt-1 font-bold">Zero Balance Items</div>
             </div>
-          </div>
 
-          {/* Card 4: Low Stock Warnings */}
-          <div className="p-4 sm:p-5 rounded-[28px] bg-[#dfe5ec] text-[#1e293b] shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between text-[#1e293b]/80 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Low Stock (Reorder)</span>
-                <span className="p-1 rounded-full bg-[#cbd5e1] text-[#1e293b]">
-                  <TrendingDown className="h-3.5 w-3.5" />
-                </span>
+            {/* Card 4: Low Stock Warnings */}
+            <div className="p-4 sm:p-5 rounded-[28px] bg-[#dfe5ec] text-[#1e293b] shadow-sm relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between text-[#1e293b]/80 mb-1">
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">Low Stock (Reorder)</span>
+                  <span className="p-1 rounded-full bg-[#cbd5e1] text-[#1e293b]">
+                    <TrendingDown className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+                <div className="text-lg sm:text-2xl font-black font-mono mt-1">{lowStockCount}</div>
+                <div className="text-[10px] text-[#1e293b]/80 mt-1 font-bold">Below Threshold Level</div>
               </div>
-              <div className="text-lg sm:text-2xl font-black font-mono mt-1">{lowStockCount}</div>
-              <div className="text-[10px] text-[#1e293b]/80 mt-1 font-bold">Below Threshold Level</div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Filter and Search Bar */}
         <div className="p-4 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
@@ -389,135 +306,184 @@ export default function InventoryPage() {
 
         {/* Inventory Items List (Desktop Table + Mobile Cards) */}
         <div className="rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] overflow-hidden">
-          {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#e5e3dc] bg-[#f6f5f0] text-[11px] font-extrabold uppercase tracking-wider text-[#88898b]">
-                  <th className="py-4 px-6">Item Name & SKU</th>
-                  <th className="py-4 px-6">Group / Category</th>
-                  <th className="py-4 px-6">HSN Code</th>
-                  <th className="py-4 px-6 text-right">Closing Quantity</th>
-                  <th className="py-4 px-6 text-right">Base Rate</th>
-                  <th className="py-4 px-6 text-right">Closing Value</th>
-                  <th className="py-4 px-6 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#efeee9] text-xs">
+          {isLoading ? (
+            <div className="p-6 space-y-4">
+              <div className="hidden md:block overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#e5e3dc] bg-[#f6f5f0] text-[11px] font-extrabold uppercase tracking-wider text-[#88898b]">
+                      <th className="py-4 px-6">Item Name & SKU</th>
+                      <th className="py-4 px-6">Group</th>
+                      <th className="py-4 px-6 text-right">Quantity</th>
+                      <th className="py-4 px-6 text-right">Base Rate</th>
+                      <th className="py-4 px-6 text-right">Closing Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#efeee9]">
+                    {[1, 2, 3, 4].map((i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="py-4 px-6 space-y-1"><div className="h-4 w-48 bg-[#e5e3dc] rounded"></div><div className="h-3 w-20 bg-[#e5e3dc] rounded-full"></div></td>
+                        <td className="py-4 px-6"><div className="h-5 w-24 bg-[#e5e3dc] rounded-full"></div></td>
+                        <td className="py-4 px-6 text-right"><div className="h-5 w-16 bg-[#e5e3dc] rounded-full ml-auto"></div></td>
+                        <td className="py-4 px-6 text-right"><div className="h-4 w-20 bg-[#e5e3dc] rounded ml-auto"></div></td>
+                        <td className="py-4 px-6 text-right"><div className="h-5 w-24 bg-[#e5e3dc] rounded ml-auto"></div></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-white border border-[#e5e3dc] animate-pulse space-y-2">
+                    <div className="h-4 w-40 bg-[#e5e3dc] rounded"></div>
+                    <div className="h-3 w-28 bg-[#e5e3dc] rounded-full"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="p-12 text-center">
+              <Package className="h-10 w-10 text-[#88898b] mx-auto mb-3 opacity-40" />
+              <h3 className="text-base font-bold text-[#232528]">No Inventory Items Found</h3>
+              <p className="text-xs text-[#88898b] mt-1 max-w-sm mx-auto">
+                {searchTerm || stockFilter !== 'all' || groupFilter !== 'all'
+                  ? 'No inventory items match your search or filter criteria.'
+                  : 'No inventory items have been synced or created yet. Click "+ Add Stock Item" to create one.'}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#e5e3dc] bg-[#f6f5f0] text-[11px] font-extrabold uppercase tracking-wider text-[#88898b]">
+                      <th className="py-4 px-6">Item Name & SKU</th>
+                      <th className="py-4 px-6">Group / Category</th>
+                      <th className="py-4 px-6">HSN Code</th>
+                      <th className="py-4 px-6 text-right">Closing Quantity</th>
+                      <th className="py-4 px-6 text-right">Base Rate</th>
+                      <th className="py-4 px-6 text-right">Closing Value</th>
+                      <th className="py-4 px-6 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#efeee9] text-xs">
+                    {filteredItems.map((item) => {
+                      const isNegative = item.closing_quantity < 0;
+                      const isLow = item.closing_quantity > 0 && item.closing_quantity <= (item.reorder_level || 10);
+                      const isOut = item.closing_quantity === 0;
+
+                      return (
+                        <tr key={item.id} className="hover:bg-[#f6f5f0]/80 transition">
+                          <td className="py-4 px-6">
+                            <div className="font-extrabold text-sm text-[#232528]">{item.item_name}</div>
+                            <div className="text-[11px] text-[#88898b] font-mono mt-0.5">SKU: {item.sku}</div>
+                          </td>
+
+                          <td className="py-4 px-6">
+                            <span className="px-3 py-1 rounded-full bg-[#f6f5f0] text-[#232528] text-[11px] font-bold">
+                              {item.stock_group}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-6 font-mono text-[#88898b]">
+                            {item.hsn_code || '84818030'}
+                          </td>
+
+                          <td className="py-4 px-6 text-right whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1 font-mono font-black text-sm px-3 py-1 rounded-full ${
+                              isNegative 
+                                ? 'bg-rose-100 text-rose-700 font-extrabold ring-2 ring-rose-300 animate-pulse' 
+                                : isOut
+                                ? 'bg-amber-100 text-amber-800'
+                                : isLow
+                                ? 'bg-amber-50 text-amber-700'
+                                : 'bg-emerald-50 text-emerald-800'
+                            }`}>
+                              {isNegative && <ShieldAlert className="h-3.5 w-3.5" />}
+                              {item.closing_quantity} {item.unit}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-6 text-right font-mono font-bold text-[#232528]">
+                            ₹{item.base_rate.toLocaleString('en-IN')}
+                          </td>
+
+                          <td className="py-4 px-6 text-right font-mono font-black text-sm text-[#232528]">
+                            <span className={isNegative ? 'text-rose-600' : 'text-[#232528]'}>
+                              ₹{item.closing_value.toLocaleString('en-IN')}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-6 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedItem(item);
+                                  setIsAdjustModalOpen(true);
+                                }}
+                                className="px-3 py-1 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] rounded-full text-xs font-bold transition btn-pill"
+                              >
+                                Adjust Stock
+                              </button>
+                              <button
+                                onClick={() => handleDeleteItem(item.id)}
+                                className="p-1.5 bg-[#fbeaea] hover:bg-[#f7d6d6] text-rose-700 rounded-full transition btn-pill"
+                                title="Delete Stock Item"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="flex flex-col space-y-4 md:hidden p-4">
                 {filteredItems.map((item) => {
                   const isNegative = item.closing_quantity < 0;
-                  const isLow = item.closing_quantity > 0 && item.closing_quantity <= (item.reorder_level || 10);
-                  const isOut = item.closing_quantity === 0;
-
                   return (
-                    <tr key={item.id} className="hover:bg-[#f6f5f0]/80 transition">
-                      <td className="py-4 px-6">
-                        <div className="font-extrabold text-sm text-[#232528]">{item.item_name}</div>
-                        <div className="text-[11px] text-[#88898b] font-mono mt-0.5">SKU: {item.sku}</div>
-                      </td>
-
-                      <td className="py-4 px-6">
-                        <span className="px-3 py-1 rounded-full bg-[#f6f5f0] text-[#232528] text-[11px] font-bold">
-                          {item.stock_group}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-6 font-mono text-[#88898b]">
-                        {item.hsn_code || '84818030'}
-                      </td>
-
-                      <td className="py-4 px-6 text-right whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 font-mono font-black text-sm px-3 py-1 rounded-full ${
-                          isNegative 
-                            ? 'bg-rose-100 text-rose-700 font-extrabold ring-2 ring-rose-300 animate-pulse' 
-                            : isOut
-                            ? 'bg-amber-100 text-amber-800'
-                            : isLow
-                            ? 'bg-amber-50 text-amber-700'
-                            : 'bg-emerald-50 text-emerald-800'
+                    <div key={item.id} className="p-4 rounded-2xl bg-white border border-[#e5e3dc] space-y-3 shadow-sm">
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <h4 className="font-extrabold text-sm text-[#232528]">{item.item_name}</h4>
+                          <div className="text-[11px] text-[#88898b] font-mono mt-0.5">SKU: {item.sku} | HSN: {item.hsn_code}</div>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-black ${
+                          isNegative ? 'bg-rose-100 text-rose-700 ring-2 ring-rose-300' : 'bg-emerald-100 text-emerald-800'
                         }`}>
-                          {isNegative && <ShieldAlert className="h-3.5 w-3.5" />}
                           {item.closing_quantity} {item.unit}
                         </span>
-                      </td>
+                      </div>
 
-                      <td className="py-4 px-6 text-right font-mono font-bold text-[#232528]">
-                        ₹{item.base_rate.toLocaleString('en-IN')}
-                      </td>
+                      <div className="pt-2 border-t border-[#efeee9] flex justify-between items-center text-xs">
+                        <div>
+                          <span className="text-[10px] text-[#88898b] block">Closing Value</span>
+                          <span className="font-mono font-black text-sm text-[#232528]">₹{item.closing_value.toLocaleString('en-IN')}</span>
+                        </div>
 
-                      <td className="py-4 px-6 text-right font-mono font-black text-sm text-[#232528]">
-                        <span className={isNegative ? 'text-rose-600' : 'text-[#232528]'}>
-                          ₹{item.closing_value.toLocaleString('en-IN')}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-6 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex gap-2">
                           <button
                             onClick={() => {
                               setSelectedItem(item);
                               setIsAdjustModalOpen(true);
                             }}
-                            className="px-3 py-1 bg-[#f6f5f0] hover:bg-[#edece6] text-[#232528] rounded-full text-xs font-bold transition btn-pill"
+                            className="px-3 py-1.5 bg-[#f6f5f0] text-[#232528] font-bold rounded-full text-xs"
                           >
-                            Adjust Stock
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="p-1.5 bg-[#fbeaea] hover:bg-[#f7d6d6] text-rose-700 rounded-full transition btn-pill"
-                            title="Delete Stock Item"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            Adjust
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Cards */}
-          <div className="md:hidden p-4 space-y-3">
-            {filteredItems.map((item) => {
-              const isNegative = item.closing_quantity < 0;
-              return (
-                <div key={item.id} className="p-4 rounded-2xl bg-white border border-[#e5e3dc] space-y-3 shadow-sm">
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <h4 className="font-extrabold text-sm text-[#232528]">{item.item_name}</h4>
-                      <div className="text-[11px] text-[#88898b] font-mono mt-0.5">SKU: {item.sku} | HSN: {item.hsn_code}</div>
-                    </div>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-black ${
-                      isNegative ? 'bg-rose-100 text-rose-700 ring-2 ring-rose-300' : 'bg-emerald-100 text-emerald-800'
-                    }`}>
-                      {item.closing_quantity} {item.unit}
-                    </span>
-                  </div>
-
-                  <div className="pt-2 border-t border-[#efeee9] flex justify-between items-center text-xs">
-                    <div>
-                      <span className="text-[10px] text-[#88898b] block">Closing Value</span>
-                      <span className="font-mono font-black text-sm text-[#232528]">₹{item.closing_value.toLocaleString('en-IN')}</span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedItem(item);
-                          setIsAdjustModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 bg-[#f6f5f0] text-[#232528] font-bold rounded-full text-xs"
-                      >
-                        Adjust
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

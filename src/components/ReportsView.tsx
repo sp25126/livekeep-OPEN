@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Voucher } from '@/types/database';
 import { 
   TrendingUp, 
   Clock, 
@@ -9,16 +11,16 @@ import {
   ChevronDown, 
   ChevronRight, 
   Building2, 
-  AlertCircle,
-  FileSpreadsheet,
-  IndianRupee,
-  Share2,
-  CheckCircle2,
-  Layers,
-  ArrowUpRight,
-  ArrowDownRight,
-  Calendar,
-  CalendarClock
+  AlertCircle, 
+  FileSpreadsheet, 
+  IndianRupee, 
+  Share2, 
+  CheckCircle2, 
+  Layers, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Calendar, 
+  CalendarClock 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -33,6 +35,10 @@ interface CustomerReminder {
 
 export default function ReportsView() {
   const [activeSubTab, setActiveSubTab] = useState<'aging' | 'pnl' | 'balance'>('aging');
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Scheduling Modal State
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerReminder | null>(null);
   const [scheduleDate, setScheduleDate] = useState('2026-04-12');
@@ -40,18 +46,110 @@ export default function ReportsView() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function loadReportsData() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('vouchers')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          setVouchers(data as Voucher[]);
+        }
+      } catch (err) {
+        console.error('Error loading vouchers for reports:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadReportsData();
+  }, []);
+
+  // Compute Dynamic Aging Buckets & Overdue Customers from Live Supabase Vouchers
+  const now = new Date();
+  
+  // Pending or Sales receivables
+  const receivableVouchers = vouchers.filter((v) => 
+    v.voucher_type === 'sales_bill' || v.voucher_type === 'sales_order' || v.status === 'pending'
+  );
+
+  let bucket0to30 = { amount: 0, count: 0 };
+  let bucket31to60 = { amount: 0, count: 0 };
+  let bucket61to90 = { amount: 0, count: 0 };
+  let bucket90Plus = { amount: 0, count: 0 };
+  const calculatedOverdue: CustomerReminder[] = [];
+
+  receivableVouchers.forEach((v) => {
+    const voucherDate = new Date(v.voucher_date || v.created_at || now);
+    const diffTime = Math.abs(now.getTime() - voucherDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 30) {
+      bucket0to30.amount += v.total_amount;
+      bucket0to30.count += 1;
+    } else if (diffDays <= 60) {
+      bucket31to60.amount += v.total_amount;
+      bucket31to60.count += 1;
+    } else if (diffDays <= 90) {
+      bucket61to90.amount += v.total_amount;
+      bucket61to90.count += 1;
+    } else {
+      bucket90Plus.amount += v.total_amount;
+      bucket90Plus.count += 1;
+    }
+
+    if (diffDays >= 30) {
+      calculatedOverdue.push({
+        name: v.party_name,
+        amount: v.total_amount,
+        days: diffDays,
+        phone: '+919876543210',
+        invoice: v.voucher_number
+      });
+    }
+  });
+
   const agingBuckets = [
-    { range: '0–30 Days', amount: 245000, count: 8, bg: 'bg-[#D2DEC9] text-[#2b3e24]' },
-    { range: '31–60 Days', amount: 182000, count: 5, bg: 'bg-[#FBE29D] text-[#4d3809]' },
-    { range: '61–90 Days', amount: 95000, count: 3, bg: 'bg-[#8F94FB]/20 text-[#2c307a]' },
-    { range: '90+ Days (Overdue)', amount: 48500, count: 2, bg: 'bg-[#F8D7DA] text-[#721C24]' }
+    { range: '0–30 Days', amount: bucket0to30.amount, count: bucket0to30.count, bg: 'bg-[#D2DEC9] text-[#2b3e24]' },
+    { range: '31–60 Days', amount: bucket31to60.amount, count: bucket31to60.count, bg: 'bg-[#FBE29D] text-[#4d3809]' },
+    { range: '61–90 Days', amount: bucket61to90.amount, count: bucket61to90.count, bg: 'bg-[#8F94FB]/20 text-[#2c307a]' },
+    { range: '90+ Days (Overdue)', amount: bucket90Plus.amount, count: bucket90Plus.count, bg: 'bg-[#F8D7DA] text-[#721C24]' }
   ];
 
-  const overdueCustomers: CustomerReminder[] = [
-    { name: 'Apex Logistics & Infra Ltd', amount: 48500, days: 94, phone: '+919876543210', invoice: 'INV/2026/089', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80' },
-    { name: 'Shree Balaji Traders', amount: 52000, days: 68, phone: '+919812345678', invoice: 'INV/2026/102', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80' },
-    { name: 'Mehta Chemical Works', amount: 43000, days: 62, phone: '+919723456789', invoice: 'INV/2026/108', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80' }
-  ];
+  // Dynamic P&L Calculations
+  const totalSalesRevenue = vouchers
+    .filter((v) => v.voucher_type === 'sales_bill' || v.voucher_type === 'sales_order')
+    .reduce((acc, v) => acc + v.total_amount, 0);
+
+  const totalPurchasesCOGS = vouchers
+    .filter((v) => v.voucher_type === 'purchase_order' || v.voucher_type === 'payment')
+    .reduce((acc, v) => acc + v.total_amount, 0);
+
+  const netOperatingProfit = totalSalesRevenue - totalPurchasesCOGS;
+  const marginPercentage = totalSalesRevenue > 0 
+    ? ((netOperatingProfit / totalSalesRevenue) * 100).toFixed(1) 
+    : '0.0';
+
+  // Dynamic Balance Sheet Calculations
+  const sundryDebtors = receivableVouchers.reduce((acc, v) => acc + v.total_amount, 0);
+  const sundryCreditors = vouchers
+    .filter((v) => v.voucher_type === 'purchase_order' && v.status === 'pending')
+    .reduce((acc, v) => acc + v.total_amount, 0);
+
+  const totalReceipts = vouchers
+    .filter((v) => v.voucher_type === 'receipt')
+    .reduce((acc, v) => acc + v.total_amount, 0);
+
+  const totalPayments = vouchers
+    .filter((v) => v.voucher_type === 'payment')
+    .reduce((acc, v) => acc + v.total_amount, 0);
+
+  const bankAndCashBalance = Math.max(0, totalReceipts - totalPayments);
+  const totalLiabilities = sundryCreditors + (totalSalesRevenue * 0.18);
+  const totalAssets = sundryDebtors + bankAndCashBalance;
 
   const getWhatsAppReminderUrl = (customer: CustomerReminder) => {
     const text = `Dear ${customer.name},\n\nThis is a gentle payment reminder from Livekeeping Enterprises regarding overdue invoice *${customer.invoice}* for the amount of *₹${customer.amount.toLocaleString('en-IN')}* (overdue by ${customer.days} days).\n\nKindly arrange payment via NEFT/UPI or reply if already cleared.\n\nThank you for your prompt cooperation!`;
@@ -62,7 +160,6 @@ export default function ReportsView() {
     window.open(getWhatsAppReminderUrl(customer), '_blank');
   };
 
-  // 1-Click Google Calendar Event Generator
   const handleAddToGoogleCalendar = (customer: CustomerReminder, dateStr: string, timeStr = '10:00') => {
     const title = `💰 Payment Follow-up: ${customer.name} (₹${customer.amount.toLocaleString('en-IN')})`;
     const waUrl = getWhatsAppReminderUrl(customer);
@@ -81,7 +178,6 @@ export default function ReportsView() {
     window.open(gcalUrl, '_blank');
   };
 
-  // Download Standard Apple/Outlook iCal (.ics) Event
   const handleDownloadIcs = (customer: CustomerReminder, dateStr: string, timeStr = '10:00') => {
     const title = `💰 Payment Follow-up: ${customer.name} (₹${customer.amount.toLocaleString('en-IN')})`;
     const waUrl = getWhatsAppReminderUrl(customer);
@@ -101,15 +197,17 @@ export default function ReportsView() {
       'VERSION:2.0',
       'PRODID:-//Livekeeping Open//Payment Reminder//EN',
       'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
       'BEGIN:VEVENT',
       `SUMMARY:${title}`,
       `DESCRIPTION:${details}`,
       `DTSTART:${startDateTime}`,
       `DTEND:${endDateTime}`,
+      'STATUS:CONFIRMED',
       'BEGIN:VALARM',
       'TRIGGER:-PT15M',
       'ACTION:DISPLAY',
-      `DESCRIPTION:Follow-up payment with ${customer.name}`,
+      'DESCRIPTION:Follow-up Reminder',
       'END:VALARM',
       'END:VEVENT',
       'END:VCALENDAR'
@@ -118,7 +216,7 @@ export default function ReportsView() {
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
-    link.setAttribute('download', `reminder-${customer.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
+    link.setAttribute('download', `payment-reminder-${customer.invoice.replace(/[^a-zA-Z0-9]/g, '_')}.ics`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -126,7 +224,7 @@ export default function ReportsView() {
 
   const handleSaveScheduledReminder = async (e: React.FormEvent, calendarOption?: 'google' | 'ics') => {
     e.preventDefault();
-    if (!selectedCustomer || !scheduleDate) return;
+    if (!selectedCustomer) return;
 
     setIsScheduling(true);
     try {
@@ -134,9 +232,10 @@ export default function ReportsView() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          partyName: selectedCustomer.name,
-          phoneNumber: selectedCustomer.phone,
+          customerName: selectedCustomer.name,
+          phone: selectedCustomer.phone,
           amountDue: selectedCustomer.amount,
+          daysOverdue: selectedCustomer.days,
           scheduledFor: scheduleDate,
           voucherNumber: selectedCustomer.invoice
         })
@@ -205,72 +304,102 @@ export default function ReportsView() {
       {activeSubTab === 'aging' && (
         <div className="space-y-6">
           {/* Aging Summary Pastel Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {agingBuckets.map((bucket) => (
-              <div key={bucket.range} className={`p-5 rounded-[24px] ${bucket.bg} shadow-sm space-y-1`}>
-                <div className="text-[11px] font-black uppercase tracking-wider">{bucket.range}</div>
-                <div className="text-xl sm:text-2xl font-black">₹{bucket.amount.toLocaleString('en-IN')}</div>
-                <div className="text-[11px] font-medium opacity-80">{bucket.count} Invoices Pending</div>
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-5 rounded-[24px] bg-[#fafaf8] border border-[#e5e3dc] animate-pulse space-y-2">
+                  <div className="h-3 w-20 bg-[#e5e3dc] rounded-full"></div>
+                  <div className="h-7 w-28 bg-[#e5e3dc] rounded-md"></div>
+                  <div className="h-3 w-24 bg-[#e5e3dc] rounded-full"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {agingBuckets.map((bucket) => (
+                <div key={bucket.range} className={`p-5 rounded-[24px] ${bucket.bg} shadow-sm space-y-1`}>
+                  <div className="text-[11px] font-black uppercase tracking-wider">{bucket.range}</div>
+                  <div className="text-xl sm:text-2xl font-black">₹{bucket.amount.toLocaleString('en-IN')}</div>
+                  <div className="text-[11px] font-medium opacity-80">{bucket.count} Invoices Pending</div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Overdue Action Cards */}
           <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-4">
             <div>
               <h3 className="font-extrabold text-base text-[#232528] flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-[#8F94FB]" /> Critical Overdue Receivables (&gt;60 Days)
+                <AlertCircle className="h-5 w-5 text-[#8F94FB]" /> Critical Overdue Receivables
               </h3>
-              <p className="text-xs text-[#88898b] mt-0.5">Send instant WhatsApp payment reminder messages with 1-tap</p>
+              <p className="text-xs text-[#88898b] mt-0.5">Send instant WhatsApp payment reminder messages or schedule calendar follow-ups</p>
             </div>
 
-            <div className="space-y-3">
-              {overdueCustomers.map((c) => (
-                <div key={c.name} className="p-4 rounded-2xl bg-[#f6f5f0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src={c.avatar}
-                      alt={c.name}
-                      className="h-10 w-10 rounded-full object-cover grayscale contrast-125 ring-2 ring-white"
-                    />
-                    <div>
-                      <div className="font-extrabold text-sm text-[#232528]">{c.name}</div>
-                      <div className="text-xs text-[#88898b] mt-0.5 flex items-center gap-2">
-                        <span className="font-mono">{c.invoice}</span>
-                        <span>•</span>
-                        <span className="text-rose-700 font-bold">{c.days} days overdue</span>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-[#f6f5f0] animate-pulse flex justify-between items-center">
+                    <div className="space-y-2">
+                      <div className="h-4 w-40 bg-[#e5e3dc] rounded"></div>
+                      <div className="h-3 w-24 bg-[#e5e3dc] rounded-full"></div>
+                    </div>
+                    <div className="h-8 w-32 bg-[#e5e3dc] rounded-full"></div>
+                  </div>
+                ))}
+              </div>
+            ) : calculatedOverdue.length === 0 ? (
+              <div className="p-8 text-center rounded-2xl bg-[#f6f5f0] text-[#88898b]">
+                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-[#2b3e24]" />
+                <p className="text-xs font-bold text-[#232528]">All Customer Accounts Current</p>
+                <p className="text-[11px] mt-0.5">No overdue customer invoices pending follow-up.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {calculatedOverdue.map((c, idx) => (
+                  <div key={idx} className="p-4 rounded-2xl bg-[#f6f5f0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 rounded-full bg-[#232528] text-[#f5ba41] font-black text-sm flex items-center justify-center ring-2 ring-white">
+                        {c.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-sm text-[#232528]">{c.name}</div>
+                        <div className="text-xs text-[#88898b] mt-0.5 flex items-center gap-2">
+                          <span className="font-mono">{c.invoice}</span>
+                          <span>•</span>
+                          <span className="text-rose-700 font-bold">{c.days} days overdue</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
+                      <div className="text-right">
+                        <div className="text-base font-black text-[#232528] font-mono">₹{c.amount.toLocaleString('en-IN')}</div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedCustomer(c);
+                            setIsScheduleModalOpen(true);
+                          }}
+                          className="min-h-[40px] px-4 py-2 bg-white hover:bg-[#edece6] text-[#232528] font-bold rounded-full text-xs flex items-center gap-1.5 btn-pill border border-[#e5e3dc]"
+                          title="Schedule automated reminder"
+                        >
+                          <CalendarClock className="h-4 w-4 text-[#88898b]" /> Schedule
+                        </button>
+
+                        <button
+                          onClick={() => handleSendReminder(c)}
+                          className="min-h-[40px] px-5 py-2 bg-[#D2DEC9] hover:bg-[#c2d2b7] text-[#2b3e24] font-black rounded-full text-xs flex items-center gap-1.5 btn-pill shadow-sm"
+                        >
+                          <Share2 className="h-4 w-4" /> Remind WhatsApp
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
-                    <div className="text-right">
-                      <div className="text-base font-black text-[#232528] font-mono">₹{c.amount.toLocaleString('en-IN')}</div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedCustomer(c);
-                          setIsScheduleModalOpen(true);
-                        }}
-                        className="min-h-[40px] px-4 py-2 bg-white hover:bg-[#edece6] text-[#232528] font-bold rounded-full text-xs flex items-center gap-1.5 btn-pill border border-[#e5e3dc]"
-                        title="Schedule automated reminder"
-                      >
-                        <CalendarClock className="h-4 w-4 text-[#88898b]" /> Schedule
-                      </button>
-
-                      <button
-                        onClick={() => handleSendReminder(c)}
-                        className="min-h-[40px] px-5 py-2 bg-[#D2DEC9] hover:bg-[#c2d2b7] text-[#2b3e24] font-black rounded-full text-xs flex items-center gap-1.5 btn-pill shadow-sm"
-                      >
-                        <Share2 className="h-4 w-4" /> Remind WhatsApp
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {scheduleFeedback && (
@@ -285,103 +414,113 @@ export default function ReportsView() {
       {/* ================= TAB 2: PROFIT & LOSS ================= */}
       {activeSubTab === 'pnl' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#efeee9] pb-3">
-              <h4 className="font-extrabold text-sm text-[#232528] flex items-center gap-2">
-                <ArrowUpRight className="h-4 w-4 text-[#2b3e24]" /> Revenue & Sales Income
-              </h4>
-              <span className="text-xs font-black text-[#2b3e24] font-mono">₹28,45,000</span>
-            </div>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Domestic GST B2B Sales</span>
-                <span className="font-bold text-[#232528] font-mono">₹24,50,000</span>
+          {isLoading ? (
+            <>
+              <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] animate-pulse space-y-4">
+                <div className="h-5 w-48 bg-[#e5e3dc] rounded"></div>
+                <div className="h-4 w-full bg-[#e5e3dc] rounded"></div>
               </div>
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Interstate IGST Supplies</span>
-                <span className="font-bold text-[#232528] font-mono">₹3,95,000</span>
+              <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] animate-pulse space-y-4">
+                <div className="h-5 w-48 bg-[#e5e3dc] rounded"></div>
+                <div className="h-4 w-full bg-[#e5e3dc] rounded"></div>
               </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <>
+              <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-4">
+                <div className="flex items-center justify-between border-b border-[#efeee9] pb-3">
+                  <h4 className="font-extrabold text-sm text-[#232528] flex items-center gap-2">
+                    <ArrowUpRight className="h-4 w-4 text-[#2b3e24]" /> Revenue & Sales Income
+                  </h4>
+                  <span className="text-xs font-black text-[#2b3e24] font-mono">₹{totalSalesRevenue.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between py-1 text-[#88898b]">
+                    <span>Domestic GST Sales & Invoices</span>
+                    <span className="font-bold text-[#232528] font-mono">₹{totalSalesRevenue.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              </div>
 
-          <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-4">
-            <div className="flex items-center justify-between border-b border-[#efeee9] pb-3">
-              <h4 className="font-extrabold text-sm text-[#232528] flex items-center gap-2">
-                <ArrowDownRight className="h-4 w-4 text-rose-700" /> Operating Expenses & COGS
-              </h4>
-              <span className="text-xs font-black text-rose-700 font-mono">₹19,10,000</span>
-            </div>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Direct Raw Material Purchases</span>
-                <span className="font-bold text-[#232528] font-mono">₹16,40,000</span>
+              <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-4">
+                <div className="flex items-center justify-between border-b border-[#efeee9] pb-3">
+                  <h4 className="font-extrabold text-sm text-[#232528] flex items-center gap-2">
+                    <ArrowDownRight className="h-4 w-4 text-rose-700" /> Operating Purchases & Expenses
+                  </h4>
+                  <span className="text-xs font-black text-rose-700 font-mono">₹{totalPurchasesCOGS.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between py-1 text-[#88898b]">
+                    <span>Vendor Purchases & Disbursed Payments</span>
+                    <span className="font-bold text-[#232528] font-mono">₹{totalPurchasesCOGS.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Freight & Warehouse Logistics</span>
-                <span className="font-bold text-[#232528] font-mono">₹2,70,000</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="md:col-span-2 p-6 rounded-[28px] bg-[#232528] text-white flex items-center justify-between shadow-xl">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-[#c9c8c5]">Estimated Net Operating Profit</div>
-              <div className="text-2xl sm:text-3xl font-black mt-1 text-[#f5ba41]">₹9,35,000</div>
-              <div className="text-xs text-[#c9c8c5] mt-0.5 font-medium">+32.8% Margin (FY 2026-27)</div>
-            </div>
-            <div className="p-3 rounded-2xl bg-white/10">
-              <TrendingUp className="h-8 w-8 text-[#f5ba41]" />
-            </div>
-          </div>
+              <div className="md:col-span-2 p-6 rounded-[28px] bg-[#232528] text-white flex items-center justify-between shadow-xl">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#c9c8c5]">Estimated Net Operating Profit</div>
+                  <div className="text-2xl sm:text-3xl font-black mt-1 text-[#f5ba41]">₹{netOperatingProfit.toLocaleString('en-IN')}</div>
+                  <div className="text-xs text-[#c9c8c5] mt-0.5 font-medium">{marginPercentage}% Margin on Live Vouchers</div>
+                </div>
+                <div className="p-3 rounded-2xl bg-white/10">
+                  <TrendingUp className="h-8 w-8 text-[#f5ba41]" />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {/* ================= TAB 3: BALANCE SHEET ================= */}
       {activeSubTab === 'balance' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-3">
-            <div className="font-extrabold text-sm text-[#232528] border-b border-[#efeee9] pb-2">Liabilities & Equity</div>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Capital & Reserves</span>
-                <span className="font-bold text-[#232528] font-mono">₹45,00,000</span>
+          {isLoading ? (
+            <>
+              <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] animate-pulse space-y-3">
+                <div className="h-5 w-36 bg-[#e5e3dc] rounded"></div>
+                <div className="h-4 w-full bg-[#e5e3dc] rounded"></div>
               </div>
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Sundry Creditors</span>
-                <span className="font-bold text-[#232528] font-mono">₹12,40,000</span>
+              <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] animate-pulse space-y-3">
+                <div className="h-5 w-36 bg-[#e5e3dc] rounded"></div>
+                <div className="h-4 w-full bg-[#e5e3dc] rounded"></div>
               </div>
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>GST Tax Payable</span>
-                <span className="font-bold text-[#232528] font-mono">₹2,80,000</span>
+            </>
+          ) : (
+            <>
+              <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-3">
+                <div className="font-extrabold text-sm text-[#232528] border-b border-[#efeee9] pb-2">Liabilities & Creditors</div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between py-1 text-[#88898b]">
+                    <span>Sundry Creditors (Pending Purchases)</span>
+                    <span className="font-bold text-[#232528] font-mono">₹{sundryCreditors.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="border-t border-[#efeee9] pt-2 flex justify-between font-extrabold text-[#232528]">
+                    <span>Total Liabilities</span>
+                    <span className="font-mono">₹{totalLiabilities.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
               </div>
-              <div className="border-t border-[#efeee9] pt-2 flex justify-between font-extrabold text-[#232528]">
-                <span>Total Liabilities</span>
-                <span className="font-mono">₹60,20,000</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-3">
-            <div className="font-extrabold text-sm text-[#232528] border-b border-[#efeee9] pb-2">Assets & Receivables</div>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Fixed Assets & Machinery</span>
-                <span className="font-bold text-[#232528] font-mono">₹32,00,000</span>
+              <div className="p-6 rounded-[28px] bg-[#fafaf8] border border-[#e5e3dc] space-y-3">
+                <div className="font-extrabold text-sm text-[#232528] border-b border-[#efeee9] pb-2">Assets & Receivables</div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between py-1 text-[#88898b]">
+                    <span>Sundry Debtors (Receivables)</span>
+                    <span className="font-bold text-[#232528] font-mono">₹{sundryDebtors.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between py-1 text-[#88898b]">
+                    <span>Bank & Cash Balances</span>
+                    <span className="font-bold text-[#232528] font-mono">₹{bankAndCashBalance.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="border-t border-[#efeee9] pt-2 flex justify-between font-extrabold text-[#232528]">
+                    <span>Total Assets</span>
+                    <span className="font-mono">₹{totalAssets.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Sundry Debtors (Receivables)</span>
-                <span className="font-bold text-[#232528] font-mono">₹18,50,000</span>
-              </div>
-              <div className="flex justify-between py-1 text-[#88898b]">
-                <span>Bank & Cash Balances</span>
-                <span className="font-bold text-[#232528] font-mono">₹9,70,000</span>
-              </div>
-              <div className="border-t border-[#efeee9] pt-2 flex justify-between font-extrabold text-[#232528]">
-                <span>Total Assets</span>
-                <span className="font-mono">₹60,20,000</span>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       )}
 
@@ -415,7 +554,6 @@ export default function ReportsView() {
                   <input
                     type="date"
                     required
-                    min="2026-04-01"
                     value={scheduleDate}
                     onChange={(e) => setScheduleDate(e.target.value)}
                     className="w-full bg-[#f6f5f0] border-none rounded-2xl px-3.5 py-2.5 text-xs font-bold text-[#232528] focus:ring-2 focus:ring-[#f5ba41]"
