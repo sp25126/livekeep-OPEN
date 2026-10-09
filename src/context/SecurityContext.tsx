@@ -22,7 +22,7 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
   // Always lock initially to enforce Zero-Trust access control
   const [isLocked, setIsLocked] = useState<boolean>(true);
   const [autoLockMinutes, setAutoLockMinutes] = useState<number>(DEFAULT_AUTO_LOCK_MINUTES);
-  const [lastActiveTimestamp, setLastActiveTimestamp] = useState<number>(Date.now());
+  const [lastActiveTimestamp, setLastActiveTimestamp] = useState<number>(0);
   const [remainingAttempts, setRemainingAttempts] = useState<number>(5);
   const [isLockedOut, setIsLockedOut] = useState<boolean>(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -62,6 +62,7 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
 
     // Periodic inactivity scanner (checks every 5 seconds)
     timerRef.current = setInterval(() => {
+      if (lastActiveTimestamp === 0) return;
       const elapsed = Date.now() - lastActiveTimestamp;
       const timeoutThreshold = autoLockMinutes * 60 * 1000;
       if (elapsed > timeoutThreshold) {
@@ -79,6 +80,7 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
 
   // Check existing session on mount
   useEffect(() => {
+    setLastActiveTimestamp(Date.now());
     if (typeof window !== 'undefined') {
       const stored = sessionStorage.getItem(SESSION_TOKEN_KEY);
       if (stored) {
@@ -89,7 +91,6 @@ export function SecurityProvider({ children }: { children: React.ReactNode }) {
             if (parsed.autoLockMinutes) {
               setAutoLockMinutes(parsed.autoLockMinutes);
             }
-            setLastActiveTimestamp(Date.now());
           } else {
             sessionStorage.removeItem(SESSION_TOKEN_KEY);
             setIsLocked(true);
