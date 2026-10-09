@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Voucher, UserRole, PaymentStatus } from '@/types/database';
+import { Voucher, VoucherType, UserRole, PaymentStatus } from '@/types/database';
 import sampleData from '@/data/sample_invoices.json';
 import confetti from 'canvas-confetti';
 import { queueOfflineVoucher } from '@/lib/services/offlineSync';
@@ -46,14 +46,22 @@ export default function Dashboard() {
   const [partyName, setPartyName] = useState('');
   const [partyGstin, setPartyGstin] = useState('24AAACA12341ZV');
   const [amount, setAmount] = useState('');
-  const [voucherType, setVoucherType] = useState<'sales_bill' | 'quotation'>('sales_bill');
+  const [voucherType, setVoucherType] = useState<VoucherType>('sales_bill');
+  const [fromAccount, setFromAccount] = useState('HDFC Bank Account');
+  const [toAccount, setToAccount] = useState('Cash in Hand');
+  const [paymentMode, setPaymentMode] = useState<'bank' | 'cash' | 'cheque' | 'upi'>('bank');
+  const [instrumentNo, setInstrumentNo] = useState('');
 
   // Edit Voucher Form State
   const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
   const [editPartyName, setEditPartyName] = useState('');
   const [editPartyGstin, setEditPartyGstin] = useState('');
   const [editAmount, setEditAmount] = useState('');
-  const [editVoucherType, setEditVoucherType] = useState<'sales_bill' | 'quotation'>('sales_bill');
+  const [editVoucherType, setEditVoucherType] = useState<VoucherType>('sales_bill');
+  const [editFromAccount, setEditFromAccount] = useState('HDFC Bank Account');
+  const [editToAccount, setEditToAccount] = useState('Cash in Hand');
+  const [editPaymentMode, setEditPaymentMode] = useState<'bank' | 'cash' | 'cheque' | 'upi'>('bank');
+  const [editInstrumentNo, setEditInstrumentNo] = useState('');
 
   useEffect(() => {
     // Load initial mock data
@@ -203,34 +211,53 @@ export default function Dashboard() {
     const sellerStateCode = '24'; // Gujarat (seller)
     const buyerStateCode = partyGstin?.trim().substring(0, 2) || '24';
 
-    const taxCalc = calculateInvoiceTaxes(
-      [
-        {
-          itemName: 'B2B Commercial Supplies',
-          hsnCode: '84818030',
-          quantity: 1,
-          unitPrice: numericAmount,
-          taxRate: 18
-        }
-      ],
-      sellerStateCode,
-      buyerStateCode
-    );
+    const isTaxApplicable = ['sales_bill', 'purchase_order', 'credit_note', 'quotation'].includes(voucherType);
 
-    const nextNum = `INV/2026-27/${String(vouchers.length + 1).padStart(3, '0')}`;
+    const taxCalc = isTaxApplicable
+      ? calculateInvoiceTaxes(
+          [
+            {
+              itemName: `${voucherType.replace('_', ' ').toUpperCase()} Commercial Entry`,
+              hsnCode: '84818030',
+              quantity: 1,
+              unitPrice: numericAmount,
+              taxRate: 18
+            }
+          ],
+          sellerStateCode,
+          buyerStateCode
+        )
+      : { grandTotal: numericAmount, totalTax: 0, itemBreakdowns: [] };
+
+    const prefixMap: Record<string, string> = {
+      sales_bill: 'INV',
+      receipt: 'RCP',
+      payment: 'PAY',
+      contra: 'CNT',
+      purchase_order: 'PO',
+      credit_note: 'CN',
+      quotation: 'QTN',
+      delivery_challan: 'DC'
+    };
+    const prefix = prefixMap[voucherType] || 'VCH';
+    const nextNum = `${prefix}/2026-27/${String(vouchers.length + 1).padStart(3, '0')}`;
 
     const newVoucher: Voucher = {
       id: `v-${Date.now()}`,
       organization_id: 'org-101',
       voucher_number: nextNum,
       voucher_type: voucherType,
-      party_name: partyName,
+      party_name: voucherType === 'contra' ? `${fromAccount} ➔ ${toAccount}` : (partyName || 'Cash Account'),
       party_gstin: partyGstin,
       total_amount: taxCalc.grandTotal,
       tax_amount: taxCalc.totalTax,
       status: 'pending',
+      from_account: fromAccount,
+      to_account: toAccount,
+      payment_mode: paymentMode,
+      instrument_number: instrumentNo || undefined,
       items: taxCalc.itemBreakdowns.map((item) => ({
-        item_name: item.itemName || 'Commercial Supply',
+        item_name: item.itemName || 'Commercial Entry',
         hsn_code: item.hsnCode,
         quantity: item.quantity,
         unit_price: item.unitPrice,
@@ -248,6 +275,7 @@ export default function Dashboard() {
     setIsNewModalOpen(false);
     setPartyName('');
     setAmount('');
+    setInstrumentNo('');
 
     if (typeof window !== 'undefined' && !navigator.onLine) {
       queueOfflineVoucher(newVoucher);
@@ -281,42 +309,54 @@ export default function Dashboard() {
     setEditPartyGstin(voucher.party_gstin || '24AAACA12341ZV');
     const taxableAmount = voucher.total_amount - (voucher.tax_amount || 0);
     setEditAmount(String(Math.round(taxableAmount > 0 ? taxableAmount : voucher.total_amount)));
-    setEditVoucherType(voucher.voucher_type as any);
+    setEditVoucherType(voucher.voucher_type);
+    setEditFromAccount(voucher.from_account || 'HDFC Bank Account');
+    setEditToAccount(voucher.to_account || 'Cash in Hand');
+    setEditPaymentMode(voucher.payment_mode || 'bank');
+    setEditInstrumentNo(voucher.instrument_number || '');
     setIsEditModalOpen(true);
   };
 
   // Save Voucher Edits
   const handleSaveEditVoucher = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingVoucher || !editPartyName || !editAmount) return;
+    if (!editingVoucher || !editAmount) return;
 
     const numericAmount = parseFloat(editAmount);
     const sellerStateCode = '24';
     const buyerStateCode = editPartyGstin?.trim().substring(0, 2) || '24';
 
-    const taxCalc = calculateInvoiceTaxes(
-      [
-        {
-          itemName: 'Commercial Supplies',
-          hsnCode: '84818030',
-          quantity: 1,
-          unitPrice: numericAmount,
-          taxRate: 18
-        }
-      ],
-      sellerStateCode,
-      buyerStateCode
-    );
+    const isTaxApplicable = ['sales_bill', 'purchase_order', 'credit_note', 'quotation'].includes(editVoucherType);
+
+    const taxCalc = isTaxApplicable
+      ? calculateInvoiceTaxes(
+          [
+            {
+              itemName: `${editVoucherType.replace('_', ' ').toUpperCase()} Commercial Entry`,
+              hsnCode: '84818030',
+              quantity: 1,
+              unitPrice: numericAmount,
+              taxRate: 18
+            }
+          ],
+          sellerStateCode,
+          buyerStateCode
+        )
+      : { grandTotal: numericAmount, totalTax: 0, itemBreakdowns: [] };
 
     const updatedVoucher: Voucher = {
       ...editingVoucher,
-      party_name: editPartyName,
+      party_name: editVoucherType === 'contra' ? `${editFromAccount} ➔ ${editToAccount}` : (editPartyName || 'Cash Account'),
       party_gstin: editPartyGstin,
       voucher_type: editVoucherType,
       total_amount: taxCalc.grandTotal,
       tax_amount: taxCalc.totalTax,
+      from_account: editFromAccount,
+      to_account: editToAccount,
+      payment_mode: editPaymentMode,
+      instrument_number: editInstrumentNo || undefined,
       items: taxCalc.itemBreakdowns.map((item) => ({
-        item_name: item.itemName || 'Commercial Supply',
+        item_name: item.itemName || 'Commercial Entry',
         hsn_code: item.hsnCode,
         quantity: item.quantity,
         unit_price: item.unitPrice,
@@ -543,43 +583,119 @@ export default function Dashboard() {
 
             <form onSubmit={handleSaveEditVoucher} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[#232528] mb-1">Party / Customer Name</label>
-                <input
-                  type="text"
-                  required
-                  value={editPartyName}
-                  onChange={(e) => setEditPartyName(e.target.value)}
-                  placeholder="e.g. Reliance Logistics Ltd"
-                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#232528] mb-1">Party GSTIN (15 Digits)</label>
-                <input
-                  type="text"
-                  value={editPartyGstin}
-                  onChange={(e) => setEditPartyGstin(e.target.value)}
-                  placeholder="24AAACA12341ZV"
-                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs font-bold text-[#232528] mb-1">Voucher Type</label>
                 <select
                   value={editVoucherType}
-                  onChange={(e) => setEditVoucherType(e.target.value as any)}
-                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                  onChange={(e) => setEditVoucherType(e.target.value as VoucherType)}
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 >
-                  <option value="sales_bill">Sales Bill (Tax Invoice)</option>
-                  <option value="quotation">Quotation / Proforma</option>
-                  <option value="credit_note">Credit Note</option>
+                  <option value="sales_bill">📄 Sales Bill (Tax Invoice)</option>
+                  <option value="receipt">💰 Receipt Voucher (Payment Received)</option>
+                  <option value="payment">💸 Payment Voucher (Expense / Vendor Pay)</option>
+                  <option value="contra">🔄 Contra Voucher (Bank ⇋ Cash Transfer)</option>
+                  <option value="purchase_order">📦 Purchase Order</option>
+                  <option value="credit_note">📝 Credit Note</option>
+                  <option value="quotation">📊 Quotation / Estimate</option>
+                  <option value="delivery_challan">🚚 Delivery Challan</option>
                 </select>
               </div>
 
+              {/* Dynamic Fields for Contra */}
+              {editVoucherType === 'contra' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-[#232528] mb-1">From Account (Source)</label>
+                    <select
+                      value={editFromAccount}
+                      onChange={(e) => setEditFromAccount(e.target.value)}
+                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                    >
+                      <option value="HDFC Bank Account">HDFC Bank Account</option>
+                      <option value="SBI Current Account">SBI Current Account</option>
+                      <option value="ICICI Bank Account">ICICI Bank Account</option>
+                      <option value="Cash in Hand">Cash in Hand</option>
+                      <option value="Petty Cash">Petty Cash</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#232528] mb-1">To Account (Destination)</label>
+                    <select
+                      value={editToAccount}
+                      onChange={(e) => setEditToAccount(e.target.value)}
+                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                    >
+                      <option value="Cash in Hand">Cash in Hand</option>
+                      <option value="Petty Cash">Petty Cash</option>
+                      <option value="HDFC Bank Account">HDFC Bank Account</option>
+                      <option value="SBI Current Account">SBI Current Account</option>
+                      <option value="ICICI Bank Account">ICICI Bank Account</option>
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-[#232528] mb-1">
+                      {editVoucherType === 'receipt' || editVoucherType === 'sales_bill' ? 'Customer / Party Name' : 'Party / Ledger Name'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editPartyName}
+                      onChange={(e) => setEditPartyName(e.target.value)}
+                      placeholder="e.g. Reliance Logistics Ltd"
+                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                    />
+                  </div>
+
+                  {['sales_bill', 'purchase_order', 'credit_note'].includes(editVoucherType) && (
+                    <div>
+                      <label className="block text-xs font-bold text-[#232528] mb-1">Party GSTIN (15 Digits)</label>
+                      <input
+                        type="text"
+                        value={editPartyGstin}
+                        onChange={(e) => setEditPartyGstin(e.target.value)}
+                        placeholder="24AAACA12341ZV"
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      />
+                    </div>
+                  )}
+
+                  {/* Payment / Receipt Dynamic Details */}
+                  {(editVoucherType === 'receipt' || editVoucherType === 'payment') && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#232528] mb-1">Payment Mode</label>
+                        <select
+                          value={editPaymentMode}
+                          onChange={(e) => setEditPaymentMode(e.target.value as any)}
+                          className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                        >
+                          <option value="bank">Bank Transfer (NEFT/RTGS)</option>
+                          <option value="upi">UPI / QR Code</option>
+                          <option value="cheque">Cheque</option>
+                          <option value="cash">Cash</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#232528] mb-1">Instrument / Ref No</label>
+                        <input
+                          type="text"
+                          value={editInstrumentNo}
+                          onChange={(e) => setEditInstrumentNo(e.target.value)}
+                          placeholder="e.g. CHQ-882190 or UTR-9901"
+                          className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               <div>
-                <label className="block text-xs font-bold text-[#232528] mb-1">Subtotal Taxable Amount (₹)</label>
+                <label className="block text-xs font-bold text-[#232528] mb-1">
+                  {['sales_bill', 'purchase_order', 'credit_note'].includes(editVoucherType) ? 'Subtotal Taxable Amount (₹)' : 'Total Amount (₹)'}
+                </label>
                 <input
                   type="number"
                   required
@@ -588,7 +704,9 @@ export default function Dashboard() {
                   placeholder="25000"
                   className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 />
-                <span className="text-[11px] text-[#88898b] mt-1 block">Taxes (CGST/SGST or IGST) will automatically recalculate.</span>
+                {['sales_bill', 'purchase_order', 'credit_note'].includes(editVoucherType) && (
+                  <span className="text-[11px] text-[#88898b] mt-1 block">Taxes (CGST/SGST or IGST) will automatically recalculate.</span>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-[#e5e3dc]">
@@ -611,43 +729,132 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* New Sales Bill Modal */}
+      {/* New Voucher Modal (Expanded Types) */}
       {isNewModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#232528]/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[32px] max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-[#e5e3dc] pb-3">
               <h3 className="text-base sm:text-lg font-black text-[#232528] flex items-center gap-2">
-                <Plus className="h-5 w-5 text-[#f5ba41]" /> Create New Invoice / Bill
+                <Plus className="h-5 w-5 text-[#f5ba41]" /> Create Accounting Voucher
               </h3>
               <button onClick={() => setIsNewModalOpen(false)} className="text-[#88898b] hover:text-[#232528] p-2 text-base">✕</button>
             </div>
 
             <form onSubmit={handleCreateVoucher} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[#232528] mb-1">Party / Customer Name</label>
-                <input
-                  type="text"
-                  required
-                  value={partyName}
-                  onChange={(e) => setPartyName(e.target.value)}
-                  placeholder="e.g. Reliance Logistics Ltd"
-                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
-                />
+                <label className="block text-xs font-bold text-[#232528] mb-1">Voucher Type</label>
+                <select
+                  value={voucherType}
+                  onChange={(e) => setVoucherType(e.target.value as VoucherType)}
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-bold text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                >
+                  <option value="sales_bill">📄 Sales Bill (Tax Invoice)</option>
+                  <option value="receipt">💰 Receipt Voucher (Payment Received)</option>
+                  <option value="payment">💸 Payment Voucher (Expense / Vendor Pay)</option>
+                  <option value="contra">🔄 Contra Voucher (Bank ⇋ Cash Transfer)</option>
+                  <option value="purchase_order">📦 Purchase Order</option>
+                  <option value="credit_note">📝 Credit Note</option>
+                  <option value="quotation">📊 Quotation / Estimate</option>
+                  <option value="delivery_challan">🚚 Delivery Challan</option>
+                </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#232528] mb-1">Party GSTIN (15 Digits)</label>
-                <input
-                  type="text"
-                  value={partyGstin}
-                  onChange={(e) => setPartyGstin(e.target.value)}
-                  placeholder="24AAACA12341ZV"
-                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
-                />
-              </div>
+              {/* Dynamic Fields for Contra */}
+              {voucherType === 'contra' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-[#232528] mb-1">From Account (Source)</label>
+                    <select
+                      value={fromAccount}
+                      onChange={(e) => setFromAccount(e.target.value)}
+                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                    >
+                      <option value="HDFC Bank Account">HDFC Bank Account</option>
+                      <option value="SBI Current Account">SBI Current Account</option>
+                      <option value="ICICI Bank Account">ICICI Bank Account</option>
+                      <option value="Cash in Hand">Cash in Hand</option>
+                      <option value="Petty Cash">Petty Cash</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#232528] mb-1">To Account (Destination)</label>
+                    <select
+                      value={toAccount}
+                      onChange={(e) => setToAccount(e.target.value)}
+                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                    >
+                      <option value="Cash in Hand">Cash in Hand</option>
+                      <option value="Petty Cash">Petty Cash</option>
+                      <option value="HDFC Bank Account">HDFC Bank Account</option>
+                      <option value="SBI Current Account">SBI Current Account</option>
+                      <option value="ICICI Bank Account">ICICI Bank Account</option>
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-[#232528] mb-1">
+                      {voucherType === 'receipt' || voucherType === 'sales_bill' ? 'Customer / Party Name' : 'Party / Ledger Name'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={partyName}
+                      onChange={(e) => setPartyName(e.target.value)}
+                      placeholder="e.g. Reliance Logistics Ltd"
+                      className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                    />
+                  </div>
+
+                  {['sales_bill', 'purchase_order', 'credit_note'].includes(voucherType) && (
+                    <div>
+                      <label className="block text-xs font-bold text-[#232528] mb-1">Party GSTIN (15 Digits)</label>
+                      <input
+                        type="text"
+                        value={partyGstin}
+                        onChange={(e) => setPartyGstin(e.target.value)}
+                        placeholder="24AAACA12341ZV"
+                        className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                      />
+                    </div>
+                  )}
+
+                  {/* Payment / Receipt Dynamic Details */}
+                  {(voucherType === 'receipt' || voucherType === 'payment') && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#232528] mb-1">Payment Mode</label>
+                        <select
+                          value={paymentMode}
+                          onChange={(e) => setPaymentMode(e.target.value as any)}
+                          className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                        >
+                          <option value="bank">Bank Transfer (NEFT/RTGS)</option>
+                          <option value="upi">UPI / QR Code</option>
+                          <option value="cheque">Cheque</option>
+                          <option value="cash">Cash</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#232528] mb-1">Instrument / Ref No</label>
+                        <input
+                          type="text"
+                          value={instrumentNo}
+                          onChange={(e) => setInstrumentNo(e.target.value)}
+                          placeholder="e.g. CHQ-882190 or UTR-9901"
+                          className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm font-mono text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
               <div>
-                <label className="block text-xs font-bold text-[#232528] mb-1">Subtotal Amount (₹)</label>
+                <label className="block text-xs font-bold text-[#232528] mb-1">
+                  {['sales_bill', 'purchase_order', 'credit_note'].includes(voucherType) ? 'Subtotal Taxable Amount (₹)' : 'Total Amount (₹)'}
+                </label>
                 <input
                   type="number"
                   required
@@ -656,7 +863,9 @@ export default function Dashboard() {
                   placeholder="25000"
                   className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs sm:text-sm text-[#232528] focus:outline-none focus:ring-2 focus:ring-[#f5ba41]"
                 />
-                <span className="text-[11px] text-[#88898b] mt-1 block">Automatic 18% GST (CGST 9% + SGST 9%) will be calculated.</span>
+                {['sales_bill', 'purchase_order', 'credit_note'].includes(voucherType) && (
+                  <span className="text-[11px] text-[#88898b] mt-1 block">Automatic 18% GST (CGST 9% + SGST 9%) will be calculated.</span>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-[#e5e3dc]">
@@ -671,7 +880,7 @@ export default function Dashboard() {
                   type="submit"
                   className="min-h-[44px] px-6 py-2 text-xs font-bold text-[#232528] bg-[#f5ba41] hover:bg-[#e6ab33] rounded-full shadow-md shadow-[#f5ba41]/30 transition btn-pill"
                 >
-                  Save & Queue Invoice
+                  Save & Queue Voucher
                 </button>
               </div>
             </form>

@@ -8,7 +8,16 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE voucher_type AS ENUM ('sales_bill', 'quotation', 'credit_note');
+    CREATE TYPE voucher_type AS ENUM (
+        'sales_bill', 
+        'quotation', 
+        'receipt', 
+        'payment', 
+        'contra', 
+        'purchase_order', 
+        'credit_note', 
+        'delivery_challan'
+    );
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -187,4 +196,89 @@ CREATE POLICY "Admins manage security" ON public.system_security
 INSERT INTO public.system_security (id, pin_hash, auto_lock_minutes)
 VALUES (1, '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 3)
 ON CONFLICT (id) DO NOTHING;
+
+-- 12. INVENTORY & STOCK ITEMS TABLE
+CREATE TABLE IF NOT EXISTS public.inventory_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id TEXT NOT NULL DEFAULT 'org-101',
+    item_name TEXT NOT NULL UNIQUE,
+    sku TEXT,
+    stock_group TEXT NOT NULL DEFAULT 'General',
+    unit TEXT NOT NULL DEFAULT 'Nos',
+    closing_quantity NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    opening_quantity NUMERIC(12, 2) DEFAULT 0,
+    base_rate NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    closing_value NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
+    hsn_code TEXT DEFAULT '84818030',
+    reorder_level NUMERIC(12, 2) DEFAULT 10,
+    negative_stock_allowed BOOLEAN DEFAULT true,
+    last_synced_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.inventory_items ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all org users to view inventory" ON public.inventory_items;
+CREATE POLICY "Allow all org users to view inventory" ON public.inventory_items
+    FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow admin/checker/manager to edit inventory" ON public.inventory_items;
+CREATE POLICY "Allow admin/checker/manager to edit inventory" ON public.inventory_items
+    FOR ALL USING (true);
+
+-- 13. SCHEDULED PAYMENT REMINDERS TABLE
+CREATE TABLE IF NOT EXISTS public.scheduled_reminders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id TEXT NOT NULL DEFAULT 'org-101',
+    party_id TEXT,
+    party_name TEXT NOT NULL,
+    phone_number TEXT NOT NULL,
+    voucher_number TEXT,
+    amount_due NUMERIC(12, 2) NOT NULL,
+    scheduled_for DATE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'cancelled')),
+    sent_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.scheduled_reminders ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow read reminders" ON public.scheduled_reminders;
+CREATE POLICY "Allow read reminders" ON public.scheduled_reminders
+    FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow manage reminders" ON public.scheduled_reminders;
+CREATE POLICY "Allow manage reminders" ON public.scheduled_reminders
+    FOR ALL USING (true);
+
+-- 14. INACTIVE CUSTOMER ANALYTICS VIEW
+CREATE OR REPLACE VIEW public.view_inactive_customers AS
+WITH customer_activity AS (
+    SELECT 
+        party_name,
+        party_gstin,
+        MAX(created_at) AS last_sale_date,
+        COUNT(id) AS lifetime_invoice_count,
+        SUM(total_amount) AS total_sales_value,
+        (CURRENT_DATE - MAX(created_at)::date) AS days_since_last_sale
+    FROM public.vouchers
+    WHERE status IN ('approved', 'paid')
+    GROUP BY party_name, party_gstin
+)
+SELECT 
+    party_name,
+    party_gstin,
+    last_sale_date,
+    days_since_last_sale,
+    lifetime_invoice_count,
+    total_sales_value,
+    CASE 
+        WHEN days_since_last_sale >= 180 THEN '180_plus_days'
+        WHEN days_since_last_sale >= 90 THEN '90_days'
+        WHEN days_since_last_sale >= 60 THEN '60_days'
+        ELSE '30_days'
+    END AS inactivity_tier
+FROM customer_activity;
+
 

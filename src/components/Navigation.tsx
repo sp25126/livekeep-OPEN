@@ -16,7 +16,9 @@ import {
   Box,
   Layers,
   Sparkles,
-  Lock
+  Lock,
+  Package,
+  UserX
 } from 'lucide-react';
 import { useSecurity } from '@/context/SecurityContext';
 
@@ -49,6 +51,23 @@ export default function Navigation({
       subtitle: 'Sales Bills, WhatsApp & Approvals',
       icon: Receipt,
       roles: ['admin', 'manager', 'checker', 'maker']
+    },
+    {
+      id: 'inventory',
+      name: 'Inventory & Stock',
+      subtitle: 'Stock Levels & Negative Stock Alert',
+      href: '/dashboard/inventory',
+      icon: Package,
+      roles: ['admin', 'manager', 'checker', 'maker'],
+      badge: 'Live'
+    },
+    {
+      id: 'inactive_customers',
+      name: 'Inactive Customers',
+      subtitle: '30-180+ Days WhatsApp Outreach',
+      href: '/dashboard/reports/inactive',
+      icon: UserX,
+      roles: ['admin', 'manager', 'checker']
     },
     {
       id: 'reports',
@@ -292,45 +311,61 @@ export default function Navigation({
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#232528]/95 backdrop-blur-xl border-t border-white/10 px-2 py-1.5 flex items-center justify-around safe-area-pb shadow-2xl">
         <button
           onClick={() => onTabChange && onTabChange('vouchers')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[64px] min-h-[48px] transition ${
-            activeTab === 'vouchers' && !pathname.includes('/users')
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl min-w-[54px] min-h-[48px] transition ${
+            activeTab === 'vouchers' && pathname === '/'
               ? 'text-[#f5ba41] font-black'
               : 'text-[#8c8d8f]'
           }`}
         >
-          <Receipt className="h-5 w-5 mb-0.5" />
+          <Receipt className="h-4 w-4 mb-0.5" />
           <span className="text-[10px]">Daybook</span>
         </button>
 
-        <button
-          onClick={() => onTabChange && onTabChange('reports')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[64px] min-h-[48px] transition ${
-            activeTab === 'reports' && !pathname.includes('/users')
+        <Link
+          href="/dashboard/inventory"
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl min-w-[54px] min-h-[48px] transition ${
+            pathname.includes('/inventory')
               ? 'text-[#f5ba41] font-black'
               : 'text-[#8c8d8f]'
           }`}
         >
-          <BarChart3 className="h-5 w-5 mb-0.5" />
-          <span className="text-[10px]">Reports</span>
-        </button>
+          <Package className="h-4 w-4 mb-0.5" />
+          <span className="text-[10px]">Stock</span>
+        </Link>
+
+        <Link
+          href="/dashboard/reports/inactive"
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl min-w-[54px] min-h-[48px] transition ${
+            pathname.includes('/reports/inactive')
+              ? 'text-[#f5ba41] font-black'
+              : 'text-[#8c8d8f]'
+          }`}
+        >
+          <UserX className="h-4 w-4 mb-0.5" />
+          <span className="text-[10px]">Inactive</span>
+        </Link>
 
         <button
-          onClick={onOpenGpsModal}
-          className="flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[64px] min-h-[48px] text-[#8c8d8f] hover:text-[#f5ba41] transition"
+          onClick={() => onTabChange && onTabChange('reports')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl min-w-[54px] min-h-[48px] transition ${
+            activeTab === 'reports' && pathname === '/'
+              ? 'text-[#f5ba41] font-black'
+              : 'text-[#8c8d8f]'
+          }`}
         >
-          <MapPin className="h-5 w-5 mb-0.5" />
-          <span className="text-[10px]">GPS Check</span>
+          <BarChart3 className="h-4 w-4 mb-0.5" />
+          <span className="text-[10px]">Reports</span>
         </button>
 
         <Link
           href="/dashboard/users"
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl min-w-[64px] min-h-[48px] transition ${
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl min-w-[54px] min-h-[48px] transition ${
             pathname.includes('/users')
               ? 'text-[#f5ba41] font-black'
               : 'text-[#8c8d8f]'
           }`}
         >
-          <Users className="h-5 w-5 mb-0.5" />
+          <Users className="h-4 w-4 mb-0.5" />
           <span className="text-[10px]">Staff</span>
         </Link>
       </nav>

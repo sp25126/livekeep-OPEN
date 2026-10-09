@@ -42,7 +42,7 @@ live-keeping_open/
 │   │   ├── globals.css              # Design tokens, palette variables, luxe card styling
 │   │   ├── layout.tsx               # Root layout with font imports, PWA provider, and metadata
 │   │   ├── manifest.ts              # Web App Manifest generator for PWA installation
-│   │   ├── page.tsx                 # Main Executive Dashboard (Daybook, KPI metrics, modals)
+│   │   ├── page.tsx                 # Main Executive Dashboard (Daybook, KPI metrics, dynamic modals)
 │   │   │
 │   │   ├── api/                     # Serverless API Route Handlers
 │   │   │   ├── admin/
@@ -53,10 +53,16 @@ live-keeping_open/
 │   │   │   │   │   └── route.ts     # 6-Digit Master Security PIN SHA-256 validation & rate limiting
 │   │   │   │   └── update-pin/
 │   │   │   │       └── route.ts     # Admin Master PIN rotation & inactivity timeout update
+│   │   │   ├── cron/
+│   │   │   │   └── process-reminders/
+│   │   │   │       └── route.ts     # Background CRON endpoint to fire scheduled WhatsApp reminders
 │   │   │   ├── invoices/
 │   │   │   │   └── [id]/
 │   │   │   │       └── pdf/
 │   │   │   │           └── route.ts # Serverless dynamic HTML-to-PDF invoice rendering
+│   │   │   ├── reminders/
+│   │   │   │   └── schedule/
+│   │   │   │       └── route.ts     # Schedule payment reminder API route
 │   │   │   ├── vouchers/
 │   │   │   │   ├── approve/
 │   │   │   │   │   └── route.ts     # Maker-Checker status change + WhatsApp dispatch trigger
@@ -65,6 +71,11 @@ live-keeping_open/
 │   │   │   │           └── route.ts # 1-Click Government NIC E-Invoice (IRN) API route
 │   │   │
 │   │   └── dashboard/
+│   │       ├── inventory/
+│   │       │   └── page.tsx         # Inventory tracking & Negative Stock Alert Dashboard
+│   │       ├── reports/
+│   │       │   └── inactive/
+│   │       │       └── page.tsx     # Inactive Customer Analytics (30-180+ Days) & WhatsApp Re-engagement
 │   │       └── users/
 │   │           └── page.tsx         # Admin Staff & Roles management UI portal
 │   │
@@ -73,7 +84,7 @@ live-keeping_open/
 │   │   ├── Sidebar.tsx              # Standalone RBAC Sidebar for admin pages
 │   │   ├── VoucherList.tsx          # Responsive Daybook (Desktop multi-column + Mobile card stack)
 │   │   ├── VoucherDrawer.tsx        # Slide-over invoice drawer on desktop / Bottom sheet on mobile
-│   │   ├── ReportsView.tsx          # Receivables Aging ("Money to Collect"), P&L and Balance Sheet
+│   │   ├── ReportsView.tsx          # Receivables Aging ("Money to Collect"), Scheduler Modal, P&L & Balance Sheet
 │   │   ├── SecurityPinModal.tsx     # Full-screen touch Numpad Master PIN lock overlay
 │   │   ├── SecurityLayoutWrapper.tsx# Client wrapper enforcing DOM blur and Zero-Trust session lock
 │   │   └── PWAProvider.tsx          # Service worker registration and online/offline sync listener
@@ -93,6 +104,7 @@ live-keeping_open/
 │   │   │
 │   │   └── services/
 │   │       ├── auditLogger.ts       # Zero-Trust security event logger (system_audit_logs)
+│   │       ├── scheduler.ts         # Payment reminder scheduler & cron processor engine
 │   │       ├── whatsapp.ts          # 100% Free Option A wa.me direct dispatcher + Option B Meta fallback
 │   │       ├── offlineSync.ts       # LocalStorage/IndexedDB offline voucher mutation queue
 │   │       │
@@ -103,16 +115,17 @@ live-keeping_open/
 │   ├── scripts/
 │   │   └── tally-bridge/            # Local Windows Tally XML HTTP Bridge Module
 │   │       ├── index.js             # Supabase Realtime WebSocket listener & HTTP bridge
-│   │       ├── xml-parser.js        # Declarative Tally XML envelope generator (xmlbuilder2)
+│   │       ├── xml-parser.js        # Dynamic Debit/Credit accounting parser for all voucher types
+│   │       ├── extract.js           # Tally Stock Summary extractor & Supabase inventory sync
 │   │       ├── dispatch.js          # HTTP POST dispatcher to Tally Prime Port 9000
 │   │       ├── start-tally-sync.bat # 1-Click Windows batch script to launch bridge
 │   │       └── package.json         # Standalone dependencies for local PC deployment
 │   │
 │   └── types/
-│       └── database.ts              # Strict TypeScript definitions for database, profiles & vouchers
+│       └── database.ts              # Strict TypeScript definitions for database, profiles, stock & vouchers
 │
 └── supabase/
-    └── schema.sql                   # Full PostgreSQL DDL, RLS policies, triggers & enum types
+    └── schema.sql                   # Full PostgreSQL DDL, views, RLS policies, triggers & enum types
 ```
 
 ---

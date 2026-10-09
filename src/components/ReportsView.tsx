@@ -16,11 +16,23 @@ import {
   CheckCircle2,
   Layers,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Calendar,
+  CalendarClock
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export default function ReportsView() {
   const [activeSubTab, setActiveSubTab] = useState<'aging' | 'pnl' | 'balance'>('aging');
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<{ name: string; amount: number; days: number; phone: string; invoice: string } | null>(null);
+  const [scheduleDate, setScheduleDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return d.toISOString().split('T')[0];
+  });
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
 
   const agingBuckets = [
     { range: '0–30 Days', amount: 245000, count: 8, bg: 'bg-[#D2DEC9] text-[#2b3e24]' },
@@ -38,6 +50,40 @@ export default function ReportsView() {
   const handleSendReminder = (customer: typeof overdueCustomers[0]) => {
     const text = `Dear ${customer.name},\n\nThis is a gentle payment reminder from Livekeeping Enterprises regarding overdue invoice *${customer.invoice}* for the amount of *₹${customer.amount.toLocaleString('en-IN')}* (overdue by ${customer.days} days).\n\nKindly arrange payment via NEFT/UPI or reply if already cleared.\n\nThank you for your prompt cooperation!`;
     window.open(`https://wa.me/${customer.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleSaveScheduledReminder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCustomer || !scheduleDate) return;
+
+    setIsScheduling(true);
+    try {
+      const res = await fetch('/api/reminders/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partyName: selectedCustomer.name,
+          phoneNumber: selectedCustomer.phone,
+          amountDue: selectedCustomer.amount,
+          scheduledFor: scheduleDate,
+          voucherNumber: selectedCustomer.invoice
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setScheduleFeedback(`Payment reminder scheduled for ${selectedCustomer.name} on ${scheduleDate}!`);
+        setIsScheduleModalOpen(false);
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+      } else {
+        alert(data.error || 'Failed to schedule reminder');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Network error');
+    } finally {
+      setIsScheduling(false);
+      setTimeout(() => setScheduleFeedback(null), 5000);
+    }
   };
 
   return (
@@ -123,17 +169,37 @@ export default function ReportsView() {
                       <div className="text-base font-black text-[#232528] font-mono">₹{c.amount.toLocaleString('en-IN')}</div>
                     </div>
 
-                    <button
-                      onClick={() => handleSendReminder(c)}
-                      className="min-h-[40px] px-5 py-2 bg-[#D2DEC9] hover:bg-[#c2d2b7] text-[#2b3e24] font-black rounded-full text-xs flex items-center gap-1.5 btn-pill"
-                    >
-                      <Share2 className="h-4 w-4" /> Remind WhatsApp
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedCustomer(c);
+                          setIsScheduleModalOpen(true);
+                        }}
+                        className="min-h-[40px] px-4 py-2 bg-white hover:bg-[#edece6] text-[#232528] font-bold rounded-full text-xs flex items-center gap-1.5 btn-pill border border-[#e5e3dc]"
+                        title="Schedule automated reminder"
+                      >
+                        <CalendarClock className="h-4 w-4 text-[#88898b]" /> Schedule
+                      </button>
+
+                      <button
+                        onClick={() => handleSendReminder(c)}
+                        className="min-h-[40px] px-5 py-2 bg-[#D2DEC9] hover:bg-[#c2d2b7] text-[#2b3e24] font-black rounded-full text-xs flex items-center gap-1.5 btn-pill shadow-sm"
+                      >
+                        <Share2 className="h-4 w-4" /> Remind WhatsApp
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+
+          {scheduleFeedback && (
+            <div className="p-4 rounded-2xl bg-[#D2DEC9] text-[#2b3e24] text-xs font-bold flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>{scheduleFeedback}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -236,6 +302,66 @@ export default function ReportsView() {
                 <span className="font-mono">₹60,20,000</span>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SCHEDULE PAYMENT REMINDER MODAL */}
+      {isScheduleModalOpen && selectedCustomer && (
+        <div className="fixed inset-0 z-50 bg-[#232528]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#fafaf8] border border-[#e5e3dc] rounded-[32px] max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#e5e3dc] pb-3">
+              <h3 className="text-base font-black text-[#232528] flex items-center gap-2">
+                <CalendarClock className="h-5 w-5 text-[#f5ba41]" /> Schedule Payment Reminder
+              </h3>
+              <button onClick={() => setIsScheduleModalOpen(false)} className="text-[#88898b] hover:text-[#232528]">✕</button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#f6f5f0] space-y-1.5 text-xs">
+              <div className="font-extrabold text-sm text-[#232528]">{selectedCustomer.name}</div>
+              <div className="flex justify-between text-[#88898b]">
+                <span>Invoice: <strong className="font-mono text-[#232528]">{selectedCustomer.invoice}</strong></span>
+                <span>Overdue: <strong className="text-rose-700 font-bold">{selectedCustomer.days} Days</strong></span>
+              </div>
+              <div className="flex justify-between font-black text-sm text-[#232528] pt-1 border-t border-[#e5e3dc]">
+                <span>Amount Due</span>
+                <span className="font-mono text-[#f5ba41] bg-[#232528] px-2.5 py-0.5 rounded-lg">₹{selectedCustomer.amount.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveScheduledReminder} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#232528] mb-1">Select Execution Date</label>
+                <input
+                  type="date"
+                  required
+                  min={new Date().toISOString().split('T')[0]}
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="w-full bg-[#f6f5f0] border-none rounded-2xl px-4 py-3 text-xs font-bold text-[#232528] focus:ring-2 focus:ring-[#f5ba41]"
+                />
+                <span className="text-[11px] text-[#88898b] mt-1 block">
+                  The automated cron worker will dispatch a WhatsApp payment reminder on this date.
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#e5e3dc]">
+                <button
+                  type="button"
+                  onClick={() => setIsScheduleModalOpen(false)}
+                  className="min-h-[44px] px-5 py-2 text-xs font-bold text-[#88898b] bg-[#f6f5f0] rounded-full btn-pill"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isScheduling}
+                  className="min-h-[44px] px-6 py-2 text-xs font-bold text-[#232528] bg-[#f5ba41] hover:bg-[#e6ab33] rounded-full btn-pill shadow-md shadow-[#f5ba41]/20 disabled:opacity-50"
+                >
+                  {isScheduling ? 'Scheduling...' : 'Confirm Schedule'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

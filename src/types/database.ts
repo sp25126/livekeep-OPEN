@@ -1,6 +1,15 @@
 export type UserRole = 'admin' | 'manager' | 'maker' | 'checker';
-export type VoucherType = 'sales_bill' | 'quotation' | 'credit_note';
-export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'paid';
+export type VoucherType = 
+  | 'sales_bill' 
+  | 'quotation' 
+  | 'receipt' 
+  | 'payment' 
+  | 'contra' 
+  | 'purchase_order' 
+  | 'credit_note' 
+  | 'delivery_challan';
+
+export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'paid' | 'cancelled';
 
 export interface Profile {
   id: string;
@@ -53,8 +62,56 @@ export interface Voucher {
   synced_to_tally?: boolean;
   tally_sync_error?: string;
   items?: VoucherItem[];
+  from_account?: string;
+  to_account?: string;
+  payment_mode?: 'cash' | 'bank' | 'cheque' | 'upi';
+  instrument_number?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  organization_id: string;
+  item_name: string;
+  sku?: string;
+  stock_group: string;
+  unit: string;
+  closing_quantity: number;
+  opening_quantity?: number;
+  base_rate: number;
+  closing_value: number;
+  hsn_code?: string;
+  reorder_level?: number;
+  negative_stock_allowed?: boolean;
+  last_synced_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface InactiveCustomer {
+  party_name: string;
+  party_gstin?: string;
+  phone_number?: string;
+  last_sale_date: string;
+  days_since_last_sale: number;
+  total_sales_value: number;
+  lifetime_invoice_count: number;
+  inactivity_tier: '30_days' | '60_days' | '90_days' | '180_plus_days';
+}
+
+export interface ScheduledReminder {
+  id: string;
+  organization_id: string;
+  party_id?: string;
+  party_name: string;
+  phone_number: string;
+  voucher_number?: string;
+  amount_due: number;
+  scheduled_for: string;
+  status: 'pending' | 'sent' | 'cancelled';
+  sent_at?: string;
+  created_at?: string;
 }
 
 export interface SalesFieldLog {
